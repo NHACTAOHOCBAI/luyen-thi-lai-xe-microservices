@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-   "dev": "turbo run start:dev --filter=\"./apps/*\"",
+    "dev": "turbo run start:dev --filter=\"./apps/*\"",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
@@ -20,5 +20,10 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@nestjs/microservices": "^11.1.17",
+    "amqp-connection-manager": "^5.0.0",
+    "amqplib": "^1.0.3"
+  }
 }
