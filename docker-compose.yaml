@@ -1,38 +1,174 @@
 version: '3.8'
 
 services:
-  # Database dùng chung hoặc riêng (nên chia database per service nếu được)
-  postgres-db:
+  # ========================================================
+  # 1. CÁC CƠ SỞ DỮ LIỆU (Mỗi Service một DB riêng)
+  # ========================================================
+
+  # Database cho Identity Service (Quản lý tài khoản, login)
+  db-identity:
     image: postgres:15-alpine
     environment:
+      POSTGRES_DB: identity_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
 
-  # Message Broker để các service chat với nhau
+  # Database cho User Service (Quản lý profile, thông tin người dùng)
+  db-user:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # Database cho Exam Service (Quản lý các kỳ thi, kết quả thi)
+  db-exam:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: exam_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # Database cho Course Service (Quản lý khóa học, bài học)
+  db-course:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: course_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # Database cho Question Service (Quản lý ngân hàng câu hỏi)
+  db-question:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: question_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # Database cho Notification Service (Lưu lịch sử thông báo)
+  db-notification:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # Database cho Analytics Service (Thống kê, báo cáo dữ liệu)
+  db-analytics:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: analytics_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # Database cho Simulation Service (Mô phỏng các tình huống lái xe)
+  db-simulation:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: simulation_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # ========================================================
+  # 2. MESSAGE BROKER (Giao tiếp liên dịch vụ)
+  # ========================================================
   rabbitmq:
     image: rabbitmq:3-management-alpine
     ports:
-      - "5672:5672"   # Cổng kết nối code
-      - "15672:15672" # Cổng UI quản lý
+      - "5672:5672"   # Port cho ứng dụng kết nối
+      - "15672:15672" # Port cho giao diện quản lý (Web UI)
 
-  # Service của bạn (Ví dụ Identity)
+  # ========================================================
+  # 3. CÁC MICROSERVICES (NestJS)
+  # ========================================================
+
   identity-service:
     build:
       context: .
-      dockerfile: ./apps/identity-service/Dockerfile # Bạn sẽ tạo file này ở bước sau
+      dockerfile: ./apps/identity-service/Dockerfile
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres-db:5432/identity_db
+      - DATABASE_URL=postgresql://user:password@db-identity:5432/identity_db
     depends_on:
-      - postgres-db
-      - rabbitmq
+      - db-identity
+
   user-service:
     build:
       context: .
-      dockerfile: ./apps/user-service/Dockerfile # Bạn sẽ tạo file này ở bước sau
+      dockerfile: ./apps/user-service/Dockerfile
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres-db:5432/user_db
+      - DATABASE_URL=postgresql://user:password@db-user:5432/user_db
     depends_on:
-      - postgres-db
-      - rabbitmq
+      - db-user
+
+  exam-service:
+    build:
+      context: .
+      dockerfile: ./apps/exam-service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@db-exam:5432/exam_db
+    depends_on:
+      - db-exam
+
+  course-service:
+    build:
+      context: .
+      dockerfile: ./apps/course-service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@db-course:5432/course_db
+    depends_on:
+      - db-course
+
+  question-service:
+    build:
+      context: .
+      dockerfile: ./apps/question-service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@db-question:5432/question_db
+    depends_on:
+      - db-question
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./apps/notification-service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@db-notification:5432/notification_db
+    depends_on:
+      - db-notification
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: ./apps/analytics-service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@db-analytics:5432/analytics_db
+    depends_on:
+      - db-analytics
+
+  simulation-service:
+    build:
+      context: .
+      dockerfile: ./apps/simulation-service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@db-simulation:5432/simulation_db
+    depends_on:
+      - db-simulation
+
+  # ========================================================
+  # 4. API GATEWAY (KONG)
+  # ========================================================
+  kong:
+    image: kong:latest
+    user: "root"
+    volumes:
+      - ./kong:/usr/local/kong/declarative
+    environment:
+      KONG_DATABASE: "off" # Chế độ DB-less
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yaml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+    ports:
+      - "8000:8000" # Cổng gọi API chính
+      - "8001:8001" # Cổng Admin API để kiểm tra cấu hình

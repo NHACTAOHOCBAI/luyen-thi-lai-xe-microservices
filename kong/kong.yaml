@@ -1,0 +1,77 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  # 1. Quản lý định danh và xác thực
+  - name: identity-service
+    url: http://identity-service:3000
+    routes:
+      - name: identity-route
+        paths:
+          - /auth
+
+  # 2. Quản lý thông tin người dùng (Profile, điểm số...)
+  - name: user-service
+    url: http://user-service:3000
+    routes:
+      - name: user-route
+        paths:
+          - /users
+
+  # 3. Quản lý các kỳ thi và kết quả sát hạch
+  - name: exam-service
+    url: http://exam-service:3000
+    routes:
+      - name: exam-route
+        paths:
+          - /exams
+
+  # 4. Quản lý ngân hàng câu hỏi (Lý thuyết, biển báo...)
+  - name: question-service
+    url: http://question-service:3000
+    routes:
+      - name: question-route
+        paths:
+          - /questions
+
+  # 5. Quản lý khóa học và tài liệu ôn tập
+  - name: course-service
+    url: http://course-service:3000
+    routes:
+      - name: course-route
+        paths:
+          - /courses
+
+  # 6. Dịch vụ thông báo (Email, SMS, App Push)
+  - name: notification-service
+    url: http://notification-service:3000
+    routes:
+      - name: notification-route
+        paths:
+          - /notifications
+
+  # 7. Thống kê và báo cáo tiến độ luyện tập
+  - name: analytics-service
+    url: http://analytics-service:3000
+    routes:
+      - name: analytics-route
+        paths:
+          - /analytics
+
+  # 8. Mô phỏng các tình huống thực tế (120 tình huống)
+  - name: simulation-service
+    url: http://simulation-service:3000
+    routes:
+      - name: simulation-route
+        paths:
+          - /simulations
+
+# ========================================================
+# Cấu hình Plugins chung (Tùy chọn)
+# ========================================================
+plugins:
+  - name: rate-limiting
+    config:
+      second: 5
+      hour: 1000
+      policy: local

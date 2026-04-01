@@ -3,7 +3,7 @@ FROM node:20-alpine AS builder
 RUN npm install -g turbo
 WORKDIR /app
 COPY . .
-RUN turbo prune identity-service --docker
+RUN turbo prune notification-service --docker
 
 # Giai đoạn 2: Install dependencies
 FROM node:20-alpine AS installer
@@ -14,11 +14,11 @@ RUN npm install
 
 # Giai đoạn 3: Build
 COPY --from=builder /app/out/full/ .
-RUN npx turbo build --filter=identity-service
+RUN npx turbo build --filter=notification-service
 
 # Giai đoạn 4: Runner (Image cuối cùng cực nhẹ)
 FROM node:20-alpine AS runner
 WORKDIR /app
 COPY --from=installer /app/ .
 # Chạy file main.js đã build từ NestJS
-CMD ["node", "apps/identity-service/dist/main.js"]
+CMD ["node", "apps/notification-service/dist/main.js"]
