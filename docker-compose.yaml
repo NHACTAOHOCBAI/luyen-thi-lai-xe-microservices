@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Database dùng chung hoặc riêng (nên chia database per service nếu được)
+  postgres-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+
+  # Message Broker để các service chat với nhau
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"   # Cổng kết nối code
+      - "15672:15672" # Cổng UI quản lý
+
+  # Service của bạn (Ví dụ Identity)
+  identity-service:
+    build:
+      context: .
+      dockerfile: ./apps/identity-service/Dockerfile # Bạn sẽ tạo file này ở bước sau
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres-db:5432/identity_db
+    depends_on:
+      - postgres-db
+      - rabbitmq
+  user-service:
+    build:
+      context: .
+      dockerfile: ./apps/user-service/Dockerfile # Bạn sẽ tạo file này ở bước sau
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres-db:5432/user_db
+    depends_on:
+      - postgres-db
+      - rabbitmq

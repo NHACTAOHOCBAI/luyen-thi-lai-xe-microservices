@@ -1,0 +1,41 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Quan trọng để Turbo so sánh commit
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      # 1. Kiểm tra Lint (ESLint) cho các phần bị thay đổi
+      - name: Lint
+        run: npx turbo run lint --filter=[origin/main]
+
+      # 2. Kiểm tra Type (TypeScript)
+      - name: Type Check
+        run: npx turbo run check-types --filter=[origin/main]
+
+      # 3. Chạy Unit Test
+      - name: Unit Test
+        run: npx turbo run test --filter=[origin/main]
+
+      # 4. Build thử nghiệm (Quan trọng nhất)
+      - name: Build
+        run: npx turbo run build --filter=[origin/main]
