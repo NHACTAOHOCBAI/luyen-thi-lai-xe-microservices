@@ -1,159 +1,202 @@
-# Turborepo starter
+# Luyen Thi Lai Xe Microservices - Dev Guide
 
-This Turborepo starter is maintained by the Turborepo core team.
+Tai lieu nay la file duy nhat de team dev hieu cach code va van hanh local cho repo.
 
-## Using this example
+File roadmap cac viec can lam tiep theo: [README.NEXT-STEPS.md](./README.NEXT-STEPS.md)
 
-Run the following command:
+## 1. Tong quan kien truc
 
-```sh
-npx create-turbo@latest
+- Monorepo: npm workspaces + Turborepo
+- Backend: NestJS microservices trong `apps/*`
+- Gateway: Kong DB-less trong `kong/kong.yaml`
+- Message broker: RabbitMQ
+- Database: Postgres (database per service)
+
+## 2. Cau truc thu muc
+
+```text
+apps/
+  identity-service/
+  user-service/
+  exam-service/
+  course-service/
+  question-service/
+  notification-service/
+  analytics-service/
+  simulation-service/
+packages/
+  common/              # Thu vien noi bo dung chung
+  eslint-config/
+  typescript-config/
+kong/
+  kong.yaml
+docker-compose.yaml
 ```
 
-## What's inside?
+## 3. Chay full stack bang Docker (khuyen nghi)
 
-This Turborepo includes the following packages/apps:
+Yeu cau:
+- Docker Desktop
 
-### Apps and Packages
+Start:
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+docker compose up --build
 ```
 
-Without global `turbo`, use your package manager:
+URL quan trong:
+- Kong Proxy: http://localhost:8000
+- Kong Admin API: http://localhost:8001
+- RabbitMQ UI: http://localhost:15672
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+Stop:
+
+```bash
+docker compose down
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## 4. Route qua gateway
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+- /auth -> identity-service
+- /users -> user-service
+- /exams -> exam-service
+- /questions -> question-service
+- /courses -> course-service
+- /notifications -> notification-service
+- /analytics -> analytics-service
+- /simulations -> simulation-service
 
-```sh
-turbo build --filter=docs
+## 5. Chay local de code/debug
+
+Yeu cau:
+- Node.js >= 18
+- npm
+
+Install dependencies:
+
+```bash
+npm install
 ```
 
-Without global `turbo`:
+Chay 1 service:
 
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+npm run start:dev -w identity-service
 ```
 
-### Develop
+Luu y:
+- Mac dinh service dung PORT=3000.
+- Neu chay nhieu service local, set PORT rieng.
 
-To develop all apps and packages, run the following command:
+PowerShell example:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```powershell
+$env:PORT=3001
+npm run start:dev -w identity-service
 ```
 
-Without global `turbo`, use your package manager:
+Scripts o root:
 
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+npm run build
+npm run dev
+npm run lint
+npm run check-types
+npm run format
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## 6. Cach tao service moi
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Vi du service moi: payment-service
 
-```sh
-turbo dev --filter=web
+Buoc 1 - Scaffold service
+- Co the clone tu service co san de giu convention.
+- Hoac tao moi:
+
+```bash
+npx @nestjs/cli new apps/payment-service --package-manager npm --skip-git
 ```
 
-Without global `turbo`:
+Buoc 2 - Cap nhat package cua service
+- Sua `name` trong `apps/payment-service/package.json`
+- Neu can dung thu vien noi bo, them dependency `@repo/common`
 
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+Buoc 3 - Tao Dockerfile
+- Copy pattern tu `apps/identity-service/Dockerfile`
+- Sua filter thanh `payment-service`
+
+Buoc 4 - Dang ky vao docker compose
+- Them `db-payment` (neu can DB)
+- Them service `payment-service` trong `docker-compose.yaml`
+
+Buoc 5 - Dang ky route Kong
+- Them service + route trong `kong/kong.yaml`
+- Restart Kong:
+
+```bash
+docker compose restart kong
 ```
 
-### Remote Caching
+Buoc 6 - Smoke test
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
+```bash
+docker compose up --build -d
+curl http://localhost:8000/payments
 ```
 
-Without global `turbo`, use your package manager:
+## 7. Su dung thu vien noi bo packages/common
 
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+Muc tieu cua `packages/common/src`:
+- Chua constants, DTO, event contract, helper dung chung.
+
+Quy trinh dung:
+1. Tao file module dung chung trong `packages/common/src/...`
+2. Re-export trong `packages/common/src/index.ts`
+3. Import tu service:
+
+```ts
+import { USER_CREATED_EVENT } from '@repo/common';
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+4. Dam bao service co dependency `@repo/common` trong package.json.
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+Quy uoc:
+- Event name format: `domain.action.v1`
+- Breaking change thi tao version moi, khong sua de vo tuong thich.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+## 8. Quy trinh code trong team
 
-```sh
-turbo link
+1. Keo code moi nhat.
+2. Chay lint + typecheck truoc khi push.
+3. Chay test service dang sua.
+4. Smoke test qua Kong neu co thay doi API/event.
+5. Cap nhat tai lieu neu thay doi route, contract hoac convention.
+
+Lenh goi y:
+
+```bash
+npm run lint
+npm run check-types
+npm run test -w identity-service
 ```
 
-Without global `turbo`:
+## 9. Troubleshooting nhanh
 
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+Kong route khong nhan:
+- Kiem tra route trong `kong/kong.yaml`
+- Restart Kong
 
-## Useful Links
+RabbitMQ khong nhan event:
+- Kiem tra ten queue/event producer-consumer trung nhau
+- Kiem tra host la `rabbitmq` khi chay trong docker network
 
-Learn more about the power of Turborepo:
+Bi trung port local:
+- Set PORT rieng cho tung service
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+## 10. Definition of Done cho feature/service
+
+- Co validation input
+- Co unit test cho business logic chinh
+- Co e2e test cho endpoint quan trong
+- Da dang ky gateway route neu la API moi
+- Da cap nhat tai lieu lien quan
