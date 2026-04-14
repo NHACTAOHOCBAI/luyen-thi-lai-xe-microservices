@@ -172,6 +172,74 @@ Quy uoc:
 4. Smoke test qua Kong neu co thay doi API/event.
 5. Cap nhat tai lieu neu thay doi route, contract hoac convention.
 
+### 8.1 Git workflow khi lam viec voi CI (bat buoc)
+
+Nguyen tac:
+- Khong code truc tiep tren `main`.
+- Moi tinh nang/bugfix phai di qua nhanh rieng + Pull Request.
+- Chi merge khi CI pass.
+
+Luong lam viec de xuat cho 1 tinh nang moi:
+
+1. Dong bo nhanh main moi nhat:
+
+```bash
+git checkout main
+git pull origin main
+```
+
+2. Tao nhanh feature tu main (dat ten ro y nghia):
+
+```bash
+git checkout -b feature/user-registration
+```
+
+3. Code + commit tung buoc nho, message ro rang:
+
+```bash
+git add .
+git commit -m "feat(identity): add user registration endpoint"
+```
+
+4. Truoc khi push, chay quality gate local:
+
+```bash
+npm run lint
+npm run check-types
+npm run test -w identity-service
+```
+
+5. Push nhanh len remote:
+
+```bash
+git push -u origin feature/user-registration
+```
+
+6. Tao Pull Request: `feature/user-registration` -> `main`.
+7. Cho CI chay xong (lint/test/build) va xu ly comment review.
+8. Merge PR khi da pass CI va duoc approve.
+
+Sau khi merge xong, don dep nhanh da dung:
+
+1. Xoa nhanh local:
+
+```bash
+git checkout main
+git pull origin main
+git branch -d feature/user-registration
+```
+
+2. Xoa nhanh remote:
+
+```bash
+git push origin --delete feature/user-registration
+```
+
+Luu y:
+- Dung `git branch -d` de an toan (chi xoa khi nhanh da duoc merge).
+- Neu can xoa nhanh chua merge (khong khuyen khich), moi dung `git branch -D <branch-name>`.
+- Neu nhanh co thay doi moi trong luc dang code, hay rebase/merge tu `main` de giam conflict truoc khi mo PR.
+
 Lenh goi y:
 
 ```bash
