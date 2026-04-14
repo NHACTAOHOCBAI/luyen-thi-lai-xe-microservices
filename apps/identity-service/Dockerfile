@@ -14,6 +14,7 @@ RUN npm install
 
 # Giai đoạn 3: Build
 COPY --from=builder /app/out/full/ .
+RUN npm run db:generate -w identity-service
 RUN npx turbo build --filter=identity-service
 
 # Giai đoạn 4: Runner (Image cuối cùng cực nhẹ)
@@ -21,4 +22,4 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 COPY --from=installer /app/ .
 # Chạy file main.js đã build từ NestJS
-CMD ["node", "apps/identity-service/dist/main.js"]
+CMD ["node", "apps/identity-service/dist/src/main.js"]

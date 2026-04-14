@@ -9,15 +9,18 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('health')
+  async health() {
+    return this.appService.healthCheck();
+  }
   
   @Post('test-rabbitMQ')
   async createUser(
     @Body() body: { email: string; name: string }
   ) {
-    console.log('Đang tạo người dùng với dữ liệu:', body);
-
     const result = await this.appService.createUser(body);
 
-    return { message: result.message };
+    return result;
   }
 }
