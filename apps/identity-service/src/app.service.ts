@@ -1,21 +1,42 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { PrismaService } from './prisma/prisma.service';
 
 @Injectable()
 export class AppService {
+  constructor(
+    @Inject('NOTI_SERVICE') private readonly client: ClientProxy,
+    private readonly prisma: PrismaService,
+  ) {}
+
   getHello(): string {
     return 'Hello World!';
-    //hihiiiiiii
   }
-  constructor(@Inject('NOTI_SERVICE') private client: ClientProxy) {}
+
+  async healthCheck() {
+    await this.prisma.$queryRaw`SELECT 1`;
+    return { status: 'ok', database: 'connected' };
+  }
 
   async createUser(userDto: { email: string; name: string }) {
-    // 1. Lưu user vào DB-identity của bạn
-    // ...
-    
-    // 2. Bắn sự kiện sang Notification Service
-    this.client.emit('user_created', { email: userDto.email, name: userDto.name });
-    
-    return { message: 'User created and notification triggered' };
+    const user = await this.prisma.identityUser.upsert({
+      where: { email: userDto.email },
+      update: { name: userDto.name },
+      create: {
+        email: userDto.email,
+        name: userDto.name,
+      },
+    });
+
+    this.client.emit('user_created', {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    });
+
+    return {
+      message: 'User persisted and notification triggered',
+      user,
+    };
   }
 }

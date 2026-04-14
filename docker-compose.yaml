@@ -12,6 +12,8 @@ services:
       POSTGRES_DB: identity_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - db_identity_data:/var/lib/postgresql/data
 
   # Database cho User Service (Quản lý profile, thông tin người dùng)
   db-user:
@@ -20,6 +22,8 @@ services:
       POSTGRES_DB: user_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - db_user_data:/var/lib/postgresql/data
 
   # Database cho Exam Service (Quản lý các kỳ thi, kết quả thi)
   db-exam:
@@ -28,6 +32,8 @@ services:
       POSTGRES_DB: exam_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - db_exam_data:/var/lib/postgresql/data
 
   # Database cho Course Service (Quản lý khóa học, bài học)
   db-course:
@@ -36,6 +42,8 @@ services:
       POSTGRES_DB: course_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - db_course_data:/var/lib/postgresql/data
 
   # Database cho Question Service (Quản lý ngân hàng câu hỏi)
   db-question:
@@ -44,6 +52,8 @@ services:
       POSTGRES_DB: question_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - db_question_data:/var/lib/postgresql/data
 
   # Database cho Notification Service (Lưu lịch sử thông báo)
   db-notification:
@@ -52,6 +62,8 @@ services:
       POSTGRES_DB: notification_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - db_notification_data:/var/lib/postgresql/data
 
   # Database cho Analytics Service (Thống kê, báo cáo dữ liệu)
   db-analytics:
@@ -60,6 +72,8 @@ services:
       POSTGRES_DB: analytics_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - db_analytics_data:/var/lib/postgresql/data
 
   # Database cho Simulation Service (Mô phỏng các tình huống lái xe)
   db-simulation:
@@ -68,6 +82,8 @@ services:
       POSTGRES_DB: simulation_db
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - db_simulation_data:/var/lib/postgresql/data
 
   # ========================================================
   # 2. MESSAGE BROKER (Giao tiếp liên dịch vụ)
@@ -172,3 +188,13 @@ services:
     ports:
       - "8000:8000" # Cổng gọi API chính
       - "8001:8001" # Cổng Admin API để kiểm tra cấu hình
+
+volumes:
+  db_identity_data:
+  db_user_data:
+  db_exam_data:
+  db_course_data:
+  db_question_data:
+  db_notification_data:
+  db_analytics_data:
+  db_simulation_data:

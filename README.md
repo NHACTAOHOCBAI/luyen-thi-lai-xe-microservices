@@ -105,6 +105,22 @@ npm run check-types
 npm run format
 ```
 
+Lenh DB cho identity-service:
+
+```bash
+npm run db:generate -w identity-service
+npm run db:migrate -w identity-service
+npm run db:seed -w identity-service
+```
+
+Neu chay bang Docker network noi bo:
+
+```bash
+docker compose up -d db-identity
+docker compose run --rm identity-service npm run db:deploy -w identity-service
+docker compose run --rm identity-service npm run db:seed -w identity-service
+```
+
 ## 6. Cach tao service moi
 
 Vi du service moi: payment-service

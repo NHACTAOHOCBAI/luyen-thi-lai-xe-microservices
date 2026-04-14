@@ -54,7 +54,7 @@ Viec can lam:
 3. Dua rule domain chung vao [packages/common/src](packages/common/src) chi khi thuc su dung chung.
 
 Cach lam chi tiet:
-1. Tao tai lieu domain boundary trong [README.DEV.md](README.DEV.md).
+1. Tao tai lieu domain boundary trong [README.md](README.md).
 2. Khi mo rong tinh nang, check boundary truoc khi code.
 
 Definition of Done:
