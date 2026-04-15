@@ -2,10 +2,19 @@
   "name": "@repo/common",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
- "scripts": {
-  "test": "echo 'No tests yet'"
-},
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "echo 'No tests yet'"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

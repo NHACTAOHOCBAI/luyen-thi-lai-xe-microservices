@@ -5,7 +5,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaService } from './prisma/prisma.service';
 
 @Module({
-  imports:[
+  imports: [
     ClientsModule.register([
       {
         name: 'NOTI_SERVICE',

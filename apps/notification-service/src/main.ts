@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-async function bootstrap() {
-  // 1. Khởi tạo Web Server (HTTP)
-  const app = await NestFactory.create(AppModule);
+import { ApiExceptionFilter, ApiResponseInterceptor } from '@repo/common';
+import { AppModule } from './app.module';
 
-  // 2. Kết nối thêm Microservice (RabbitMQ)
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalInterceptors(new ApiResponseInterceptor());
+  app.useGlobalFilters(new ApiExceptionFilter());
+
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
@@ -14,8 +16,7 @@ async function bootstrap() {
     },
   });
 
-  // 3. Khởi động cả hai
-  await app.startAllMicroservices(); // Chạy RabbitMQ ngầm
-  await app.listen(process.env.PORT ?? 3000);       // Mở cổng 3002 cho HTTP
+  await app.startAllMicroservices();
+  await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();
