@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+
 async function bootstrap() {
   // 1. Khởi tạo Web Server (HTTP)
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('port') ?? 3000;
 
   // 2. Kết nối thêm Microservice (RabbitMQ)
   app.connectMicroservice<MicroserviceOptions>({
@@ -14,8 +18,12 @@ async function bootstrap() {
     },
   });
 
+  // Log config source for debugging
+  console.log('✓ Configuration loaded from Consul (or .env fallback)');
+
   // 3. Khởi động cả hai
   await app.startAllMicroservices(); // Chạy RabbitMQ ngầm
-  await app.listen(process.env.PORT ?? 3000);       // Mở cổng 3002 cho HTTP
+  await app.listen(port); // Mở cổng cho HTTP
+  console.log(`✓ Notification Service listening on port ${port}`);
 }
 bootstrap();

@@ -23,7 +23,7 @@
       "persistent": true
     },
     "start:dev": {
-      "dependsOn": ["build"],
+      "dependsOn": ["^build"],
       "persistent": true
     }
   }
