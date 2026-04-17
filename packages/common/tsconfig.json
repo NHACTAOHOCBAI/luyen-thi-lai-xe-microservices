@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
     "module": "CommonJS",
-    "moduleResolution": "node10",
-    "ignoreDeprecations": "6.0",
     "target": "ES2021",
     "declaration": true,
     "declarationMap": true,
