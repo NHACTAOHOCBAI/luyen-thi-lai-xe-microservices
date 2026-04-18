@@ -28,27 +28,23 @@ export class ConsulConfigFactory {
 
       let config: Record<string, any> = {};
 
-      // Try to load from Consul first
       try {
-        config = await this.loadFromConsul(
+        const consulConfig = await this.loadFromConsul(
           consulUrl,
           nodeEnv,
           serviceName,
         );
-        this.logger.log('✓ Configuration loaded from Consul');
+        const envConfig = this.loadFromEnv(env);
+        config = this.mergeConfig(consulConfig, envConfig);
+        this.logger.log('Configuration loaded from Consul');
       } catch (error: any) {
         this.logger.warn(
           `Failed to load from Consul: ${error.message}, falling back to .env`,
         );
-
-        // Fallback to .env file / environment variables
         config = this.loadFromEnv(env);
-        this.logger.log(
-          '✓ Configuration loaded from .env file (Consul unavailable)',
-        );
+        this.logger.log('Configuration loaded from .env file');
       }
 
-      // Validate configuration if schema provided
       if (joiSchema) {
         const { error, value } = joiSchema.validate(config, {
           abortEarly: false,
@@ -69,48 +65,39 @@ export class ConsulConfigFactory {
     };
   }
 
-  /**
-   * Load configuration from Consul KV Store
-   */
   private static async loadFromConsul(
     consulUrl: string,
     nodeEnv: string,
     serviceName?: string,
   ): Promise<Record<string, any>> {
     const consul = new ConsulConfigService(consulUrl);
-
-    // Check if Consul is healthy
     const isHealthy = await consul.isHealthy();
+
     if (!isHealthy) {
       throw new Error('Consul server is not healthy');
     }
 
     const config: Record<string, any> = {};
 
-    // Load shared configuration
     const sharedPrefix = `config/${nodeEnv}/shared/`;
     const sharedConfig = await consul.getByPrefix(sharedPrefix);
     Object.entries(sharedConfig).forEach(([key, value]) => {
       const configKey = key.replace(sharedPrefix, '').replace(/\//g, '.');
-      config[configKey] = value;
+      this.setNestedValue(config, configKey, value);
     });
 
-    // Load service-specific configuration
     if (serviceName) {
       const servicePrefix = `config/${nodeEnv}/${serviceName}/`;
       const serviceConfig = await consul.getByPrefix(servicePrefix);
       Object.entries(serviceConfig).forEach(([key, value]) => {
         const configKey = key.replace(servicePrefix, '').replace(/\//g, '.');
-        config[configKey] = value;
+        this.setNestedValue(config, configKey, value);
       });
     }
 
     return config;
   }
 
-  /**
-   * Load configuration from environment variables and defaults
-   */
   private static loadFromEnv(env: NodeJS.ProcessEnv): Record<string, any> {
     return {
       nodeEnv: env.NODE_ENV || 'development',
@@ -143,5 +130,61 @@ export class ConsulConfigFactory {
           }
         : undefined,
     };
+  }
+
+  private static setNestedValue(
+    target: Record<string, any>,
+    path: string,
+    value: unknown,
+  ): void {
+    const segments = path.split('.');
+    let current = target;
+
+    for (let index = 0; index < segments.length - 1; index += 1) {
+      const segment = segments[index];
+      if (
+        typeof current[segment] !== 'object' ||
+        current[segment] === null ||
+        Array.isArray(current[segment])
+      ) {
+        current[segment] = {};
+      }
+      current = current[segment] as Record<string, any>;
+    }
+
+    current[segments[segments.length - 1]] = value;
+  }
+
+  private static mergeConfig(
+    base: Record<string, any>,
+    override: Record<string, any>,
+  ): Record<string, any> {
+    const result: Record<string, any> = { ...base };
+
+    Object.entries(override).forEach(([key, value]) => {
+      if (value === undefined) {
+        return;
+      }
+
+      const baseValue = result[key];
+      if (
+        typeof baseValue === 'object' &&
+        baseValue !== null &&
+        !Array.isArray(baseValue) &&
+        typeof value === 'object' &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        result[key] = this.mergeConfig(
+          baseValue as Record<string, any>,
+          value as Record<string, any>,
+        );
+        return;
+      }
+
+      result[key] = value;
+    });
+
+    return result;
   }
 }
