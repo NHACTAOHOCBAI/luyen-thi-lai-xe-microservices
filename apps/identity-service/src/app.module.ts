@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -36,14 +36,21 @@ import Joi from 'joi';
       ],
       isGlobal: true,
     }),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'NOTI_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://rabbitmq:5672'],
-          queue: 'notification_queue',
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [
+              configService.get<string>('rabbitmq.url') ??
+                'amqp://localhost:5672',
+            ],
+            queue: 'notification_queue',
+          },
+        }),
       },
     ]),
   ],
