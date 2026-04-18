@@ -8,6 +8,10 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  const rabbitmqUrl =
+    configService.get<string>('rabbitmq.url') ?? 'amqp://localhost:5672';
+  const port = configService.get<number>('port') ?? 3000;
 
   app.useGlobalInterceptors(new ApiResponseInterceptor());
   app.useGlobalFilters(new ApiExceptionFilter());
@@ -15,16 +19,13 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: ['amqp://rabbitmq:5672'],
+      urls: [rabbitmqUrl],
       queue: 'notification_queue',
     },
   });
 
-  const configService = app.get(ConfigService);
-  const port = configService.get<number>('port') ?? 3000;
-
   await app.startAllMicroservices();
   await app.listen(port);
-  console.log(`✓ Notification Service listening on port ${port}`);
+  console.log(`âœ“ Notification Service listening on port ${port}`);
 }
 void bootstrap();
