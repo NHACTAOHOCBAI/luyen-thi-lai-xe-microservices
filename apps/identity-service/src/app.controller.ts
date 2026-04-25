@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
+import type { LoginRequest } from './app.service';
 
 @Controller()
 export class AppController {
@@ -13,6 +14,11 @@ export class AppController {
   @Get('health')
   async health() {
     return this.appService.healthCheck();
+  }
+
+  @Post('login')
+  async login(@Body() body: LoginRequest) {
+    return this.appService.login(body);
   }
 
   @Post('test-rabbitMQ')
