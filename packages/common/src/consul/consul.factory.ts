@@ -1,7 +1,7 @@
-import { Logger } from '@nestjs/common';
-import { ConfigFactory } from '@nestjs/config';
-import { ConsulConfigService } from './consul-config.service';
-import Joi from 'joi';
+import { Logger } from "@nestjs/common";
+import { ConfigFactory } from "@nestjs/config";
+import { ConsulConfigService } from "./consul-config.service";
+import Joi from "joi";
 
 /**
  * Consul-based configuration factory for NestJS ConfigModule
@@ -20,29 +20,32 @@ export class ConsulConfigFactory {
   ): ConfigFactory {
     return async () => {
       const env = process.env;
-      const consulUrl = env.CONSUL_URL || 'http://localhost:8500';
-      const nodeEnv = env.NODE_ENV || this.resolveDefaultNodeEnv(consulUrl);
+      const consulUrl = env.CONSUL_URL || "http://localhost:8500";
+      const nodeEnv =
+        env.NODE_ENV || ConsulConfigFactory.resolveDefaultNodeEnv(consulUrl);
 
-      this.logger.log(`Loading configuration from environment: ${nodeEnv}`);
-      this.logger.log(`Consul URL: ${consulUrl}`);
+      ConsulConfigFactory.logger.log(
+        `Loading configuration from environment: ${nodeEnv}`,
+      );
+      ConsulConfigFactory.logger.log(`Consul URL: ${consulUrl}`);
 
       let config: Record<string, any> = {};
 
       try {
-        const consulConfig = await this.loadFromConsul(
+        const consulConfig = await ConsulConfigFactory.loadFromConsul(
           consulUrl,
           nodeEnv,
           serviceName,
         );
-        const envConfig = this.loadFromEnv(env);
-        config = this.mergeConfig(consulConfig, envConfig);
-        this.logger.log('Configuration loaded from Consul');
+        const envConfig = ConsulConfigFactory.loadFromEnv(env);
+        config = ConsulConfigFactory.mergeConfig(consulConfig, envConfig);
+        ConsulConfigFactory.logger.log("Configuration loaded from Consul");
       } catch (error: any) {
-        this.logger.warn(
+        ConsulConfigFactory.logger.warn(
           `Failed to load from Consul: ${error.message}, falling back to .env`,
         );
-        config = this.loadFromEnv(env);
-        this.logger.log('Configuration loaded from .env file');
+        config = ConsulConfigFactory.loadFromEnv(env);
+        ConsulConfigFactory.logger.log("Configuration loaded from .env file");
       }
 
       if (joiSchema) {
@@ -52,7 +55,7 @@ export class ConsulConfigFactory {
         });
 
         if (error) {
-          this.logger.error(
+          ConsulConfigFactory.logger.error(
             `Configuration validation failed: ${error.message}`,
           );
           throw new Error(`Configuration validation error: ${error.message}`);
@@ -74,7 +77,7 @@ export class ConsulConfigFactory {
     const isHealthy = await consul.isHealthy();
 
     if (!isHealthy) {
-      throw new Error('Consul server is not healthy');
+      throw new Error("Consul server is not healthy");
     }
 
     const config: Record<string, any> = {};
@@ -82,16 +85,16 @@ export class ConsulConfigFactory {
     const sharedPrefix = `config/${nodeEnv}/shared/`;
     const sharedConfig = await consul.getByPrefix(sharedPrefix);
     Object.entries(sharedConfig).forEach(([key, value]) => {
-      const configKey = key.replace(sharedPrefix, '').replace(/\//g, '.');
-      this.setNestedValue(config, configKey, value);
+      const configKey = key.replace(sharedPrefix, "").replace(/\//g, ".");
+      ConsulConfigFactory.setNestedValue(config, configKey, value);
     });
 
     if (serviceName) {
       const servicePrefix = `config/${nodeEnv}/${serviceName}/`;
       const serviceConfig = await consul.getByPrefix(servicePrefix);
       Object.entries(serviceConfig).forEach(([key, value]) => {
-        const configKey = key.replace(servicePrefix, '').replace(/\//g, '.');
-        this.setNestedValue(config, configKey, value);
+        const configKey = key.replace(servicePrefix, "").replace(/\//g, ".");
+        ConsulConfigFactory.setNestedValue(config, configKey, value);
       });
     }
 
@@ -99,21 +102,22 @@ export class ConsulConfigFactory {
   }
 
   private static loadFromEnv(env: NodeJS.ProcessEnv): Record<string, any> {
-    const consulUrl = env.CONSUL_URL || 'http://localhost:8500';
+    const consulUrl = env.CONSUL_URL || "http://localhost:8500";
 
     return {
-      nodeEnv: env.NODE_ENV || this.resolveDefaultNodeEnv(consulUrl),
-      port: parseInt(env.PORT || '3000', 10),
+      nodeEnv:
+        env.NODE_ENV || ConsulConfigFactory.resolveDefaultNodeEnv(consulUrl),
+      port: parseInt(env.PORT || "3000", 10),
       logging: {
-        level: env.LOG_LEVEL || 'info',
-        format: env.LOG_FORMAT || 'text',
+        level: env.LOG_LEVEL || "info",
+        format: env.LOG_FORMAT || "text",
       },
       database: env.DATABASE_URL
         ? {
             url: env.DATABASE_URL,
-            poolSize: parseInt(env.DATABASE_POOL_SIZE || '10', 10),
+            poolSize: parseInt(env.DATABASE_POOL_SIZE || "10", 10),
             connectionTimeout: parseInt(
-              env.DATABASE_CONNECTION_TIMEOUT || '5000',
+              env.DATABASE_CONNECTION_TIMEOUT || "5000",
               10,
             ),
           }
@@ -121,14 +125,14 @@ export class ConsulConfigFactory {
       rabbitmq: env.RABBITMQ_URL
         ? {
             url: env.RABBITMQ_URL,
-            username: env.RABBITMQ_USERNAME || 'guest',
-            password: env.RABBITMQ_PASSWORD || 'guest',
-            vhost: env.RABBITMQ_VHOST || '/',
+            username: env.RABBITMQ_USERNAME || "guest",
+            password: env.RABBITMQ_PASSWORD || "guest",
+            vhost: env.RABBITMQ_VHOST || "/",
             connectionTimeout: parseInt(
-              env.RABBITMQ_CONNECTION_TIMEOUT || '10000',
+              env.RABBITMQ_CONNECTION_TIMEOUT || "10000",
               10,
             ),
-            heartbeat: parseInt(env.RABBITMQ_HEARTBEAT || '60', 10),
+            heartbeat: parseInt(env.RABBITMQ_HEARTBEAT || "60", 10),
           }
         : undefined,
     };
@@ -139,13 +143,13 @@ export class ConsulConfigFactory {
     path: string,
     value: unknown,
   ): void {
-    const segments = path.split('.');
+    const segments = path.split(".");
     let current = target;
 
     for (let index = 0; index < segments.length - 1; index += 1) {
       const segment = segments[index];
       if (
-        typeof current[segment] !== 'object' ||
+        typeof current[segment] !== "object" ||
         current[segment] === null ||
         Array.isArray(current[segment])
       ) {
@@ -170,14 +174,14 @@ export class ConsulConfigFactory {
 
       const baseValue = result[key];
       if (
-        typeof baseValue === 'object' &&
+        typeof baseValue === "object" &&
         baseValue !== null &&
         !Array.isArray(baseValue) &&
-        typeof value === 'object' &&
+        typeof value === "object" &&
         value !== null &&
         !Array.isArray(value)
       ) {
-        result[key] = this.mergeConfig(
+        result[key] = ConsulConfigFactory.mergeConfig(
           baseValue as Record<string, any>,
           value as Record<string, any>,
         );
@@ -193,12 +197,12 @@ export class ConsulConfigFactory {
   private static resolveDefaultNodeEnv(consulUrl: string): string {
     const normalizedUrl = consulUrl.toLowerCase();
     if (
-      normalizedUrl.includes('localhost') ||
-      normalizedUrl.includes('127.0.0.1')
+      normalizedUrl.includes("localhost") ||
+      normalizedUrl.includes("127.0.0.1")
     ) {
-      return 'development-local';
+      return "development-local";
     }
 
-    return 'development';
+    return "development";
   }
 }

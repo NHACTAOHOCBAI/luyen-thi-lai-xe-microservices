@@ -1,17 +1,21 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
+
   "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
+    "enabled": false
   },
+
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": true,
+    "includes": ["**", "!**/.turbo", "!**/dist", "!**/node_modules"]
   },
+
   "formatter": {
     "enabled": true,
-    "indentStyle": "tab"
+    "indentStyle": "space",
+    "lineEnding": "lf"
   },
+
   "linter": {
     "enabled": true,
     "rules": {
@@ -21,6 +25,7 @@
       }
     }
   },
+
   "javascript": {
     "formatter": {
       "quoteStyle": "double"
@@ -29,12 +34,8 @@
       "unsafeParameterDecoratorsEnabled": true
     }
   },
+
   "assist": {
-    "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": "on"
-      }
-    }
+    "enabled": false
   }
 }
