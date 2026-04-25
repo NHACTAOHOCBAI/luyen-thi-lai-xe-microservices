@@ -4,16 +4,16 @@ import { EventPattern } from "@nestjs/microservices";
 
 @Controller()
 export class AppController {
-	constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) {}
 
-	@Get()
-	getHello(): string {
-		return this.appService.getHello();
-	}
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
 
-	@EventPattern("user_created") // Lắng nghe sự kiện này
-	handleUserCreated(data: any) {
-		console.log("Nhận được sự kiện user_created:", data);
-		// Logic gửi mail hoặc thông báo ở đây
-	}
+  @EventPattern("user_created") // Lắng nghe sự kiện này
+  handleUserCreated(data: any) {
+    console.log("Nhận được sự kiện user_created:", data);
+    // Logic gửi mail hoặc thông báo ở đây
+  }
 }
