@@ -1,42 +1,21 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { PrismaService } from "./prisma/prisma.service";
 
 describe("AppController", () => {
 	let appController: AppController;
-
-	const prismaMock = {
-		$connect: jest.fn(),
-		$disconnect: jest.fn(),
-		$queryRaw: jest.fn().mockResolvedValue([]),
-
-		identityUser: {
-			upsert: jest.fn().mockResolvedValue({
-				id: "user-1",
-				email: "test@gmail.com",
-				name: "Test",
-			}),
-		},
-	};
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
 			controllers: [AppController],
 			providers: [
-				AppService,
-
 				{
-					provide: "NOTI_SERVICE",
+					provide: AppService,
+					// Mock toàn bộ AppService, không khởi tạo thật
+					// → không cần NOTI_SERVICE hay PrismaService
 					useValue: {
-						emit: jest.fn(),
-						send: jest.fn(),
+						getHello: jest.fn().mockReturnValue("Hello World!"),
 					},
-				},
-
-				{
-					provide: PrismaService,
-					useValue: prismaMock,
 				},
 			],
 		}).compile();
