@@ -11,13 +11,17 @@
       "dependsOn": ["^build", "^lint"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build"], 
+      "dependsOn": ["^build"],
       "outputs": []
     },
-    
+
+    "prisma:generate": {
+      "outputs": ["node_modules/.prisma/**"]
+    },
+
     "dev": {
       "cache": false,
       "persistent": true
