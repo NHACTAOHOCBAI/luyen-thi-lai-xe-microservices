@@ -1,6 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from './prisma/prisma.service';
+import {
+  createJwtAccessToken,
+  JWT_CLIENTS,
+  JwtClientName,
+} from './auth/jwt-token.util';
+
+export type LoginRequest = {
+  email: string;
+  name?: string;
+  client: JwtClientName;
+};
 
 @Injectable()
 export class AppService {
@@ -16,6 +27,46 @@ export class AppService {
   async healthCheck() {
     await this.prisma.$queryRaw`SELECT 1`;
     return { status: 'ok', database: 'connected' };
+  }
+
+  async login(loginDto: LoginRequest) {
+    const clientConfig = JWT_CLIENTS[loginDto.client];
+    if (!clientConfig) {
+      throw new BadRequestException('Unsupported client');
+    }
+
+    const email = loginDto.email?.trim().toLowerCase();
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const name = loginDto.name?.trim() || email.split('@')[0] || 'User';
+
+    const user = await this.prisma.identityUser.upsert({
+      where: { email },
+      update: { name },
+      create: {
+        email,
+        name,
+      },
+    });
+
+    const { token, expiresAt } = createJwtAccessToken({
+      issuer: clientConfig.issuer,
+      secret: clientConfig.secret,
+      subject: user.id,
+      email: user.email,
+      name: user.name,
+      client: loginDto.client,
+    });
+
+    return {
+      message: 'Login successful',
+      tokenType: 'Bearer',
+      expiresAt,
+      accessToken: token,
+      user,
+    };
   }
 
   async createUser(userDto: { email: string; name: string }) {

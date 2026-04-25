@@ -10,7 +10,7 @@ FROM node:20-alpine AS installer
 WORKDIR /app
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/package-lock.json ./
-RUN npm install
+RUN npm ci --include=dev
 
 # Giai đoạn 3: Build
 COPY --from=builder /app/out/full/ .

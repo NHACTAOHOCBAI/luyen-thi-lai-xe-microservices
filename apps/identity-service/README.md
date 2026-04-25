@@ -57,6 +57,21 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## JWT login test
+
+Use the login endpoint to mint a Kong-compatible token for one of the two test consumers:
+
+```bash
+POST /auth/login
+{
+  "email": "demo@example.com",
+  "name": "Demo User",
+  "client": "mobile-client"
+}
+```
+
+The response returns `accessToken`, which you can send as `Authorization: Bearer <token>` to Kong-protected routes such as `/users`.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
