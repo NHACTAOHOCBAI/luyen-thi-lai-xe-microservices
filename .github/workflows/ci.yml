@@ -183,7 +183,10 @@ jobs:
         if: always()
         run: |
           STATUS="${{ job.status }}"
-          ICON=$([[ "$STATUS" == "success" ]] && echo "✅" || echo "❌")
+          if [[ "$STATUS" == "success" ]]; then ICON="✅"
+            elif [[ "$STATUS" == "cancelled" ]]; then ICON="⏹️"
+            else ICON="❌"
+            fi
           echo "## $ICON ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
           echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
