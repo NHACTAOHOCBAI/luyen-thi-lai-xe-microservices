@@ -14,10 +14,14 @@
       "dependsOn": ["^check-types"]
     },
     "test": {
-      "dependsOn": ["^build"], 
+      "dependsOn": ["^build"],
       "outputs": []
     },
-    
+
+    "prisma:generate": {
+      "cache": false
+    },
+
     "dev": {
       "cache": false,
       "persistent": true
