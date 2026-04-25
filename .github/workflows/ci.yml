@@ -8,12 +8,13 @@ on:
 
 jobs:
   # ==========================================
-  # 1: QUALITY GATE
+  # 1. QUALITY GATE
   # ==========================================
   quality-gate:
     name: Code Quality & Testing
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,33 +31,37 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma Client
-        run: |
-          npx turbo run prisma:generate --filter=...[HEAD^] || \
-          npx turbo run prisma:generate
+        run: npx turbo run prisma:generate
 
       - name: Format Check
-        run: npx @biomejs/biome format --write .
+        run: npx @biomejs/biome format .
 
-      - name: TypeScript Typecheck
+      - name: TypeScript Check
         run: npx turbo run check-types
 
-      - name: Unit & E2E Tests
+      - name: Run Tests
         run: npx turbo run test
 
   # ==========================================
-  # 2: PHÁT HIỆN THAY ĐỔI
+  # 2. DETECT CHANGES
   # ==========================================
   detect-changes:
     name: Detect Changed Services
     runs-on: ubuntu-latest
     needs: quality-gate
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     outputs:
-      services: ${{ steps.filter.outputs.changes }}
+      services: ${{ steps.set-matrix.outputs.services }}
+
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
         id: filter
+        uses: dorny/paths-filter@v3
         with:
           filters: |
             identity-service:
@@ -84,21 +89,67 @@ jobs:
               - 'apps/user-service/**'
               - 'packages/**'
 
+      - name: Build matrix
+        id: set-matrix
+        run: |
+          SERVICES="[]"
+
+          if [ "${{ steps.filter.outputs.identity-service }}" = "true" ]; then
+            SERVICES=$(echo $SERVICES | jq '. + ["identity-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.analytics-service }}" = "true" ]; then
+            SERVICES=$(echo $SERVICES | jq '. + ["analytics-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.course-service }}" = "true" ]; then
+            SERVICES=$(echo $SERVICES | jq '. + ["course-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.exam-service }}" = "true" ]; then
+            SERVICES=$(echo $SERVICES | jq '. + ["exam-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.notification-service }}" = "true" ]; then
+            SERVICES=$(echo $SERVICES | jq '. + ["notification-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.question-service }}" = "true" ]; then
+            SERVICES=$(echo $SERVICES | jq '. + ["question-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.simulation-service }}" = "true" ]; then
+            SERVICES=$(echo $SERVICES | jq '. + ["simulation-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.user-service }}" = "true" ]; then
+            SERVICES=$(echo $SERVICES | jq '. + ["user-service"]')
+          fi
+
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+
   # ==========================================
-  # 3: BUILD DOCKER & DEPLOY
+  # 3. BUILD & DEPLOY
   # ==========================================
   build-and-deploy:
-    name: Build & Deploy to Render
+    name: Build & Deploy Services
     needs: detect-changes
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
+    timeout-minutes: 20
+
+    if: |
+      needs.detect-changes.outputs.services != '[]' &&
+      needs.detect-changes.outputs.services != '' &&
+      needs.detect-changes.outputs.services != 'null'
+
     strategy:
       matrix:
         service: ${{ fromJSON(needs.detect-changes.outputs.services) }}
+
     permissions:
       packages: write
       contents: read
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -106,70 +157,52 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GitHub Container Registry (GHCR)
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Build & Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./apps/${{ matrix.service }}/Dockerfile
           push: true
-          # Tag cả :latest lẫn :sha để Render pull đúng image mới
           tags: |
             ghcr.io/nhactaohocbai/luyen-thi-lai-xe-${{ matrix.service }}:latest
             ghcr.io/nhactaohocbai/luyen-thi-lai-xe-${{ matrix.service }}:${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
-      - name: Trigger Deploy on Render
+      - name: Deploy to Render
         run: |
-          echo "Fetching service ID for ${{ matrix.service }}..."
-
-          # Lấy service ID theo tên service
           RESPONSE=$(curl -sf "https://api.render.com/v1/services?name=luyen-thi-lai-xe-${{ matrix.service }}&limit=1" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Accept: application/json")
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}")
 
           SERVICE_ID=$(echo "$RESPONSE" | jq -r '.[0].service.id // empty')
 
           if [ -z "$SERVICE_ID" ]; then
-            echo "Lỗi: Không tìm thấy service 'luyen-thi-lai-xe-${{ matrix.service }}' trên Render"
-            echo "Kiểm tra lại tên service trong render.yaml"
+            echo "❌ Không tìm thấy service: luyen-thi-lai-xe-${{ matrix.service }}"
             exit 1
           fi
 
-          echo "Service ID: $SERVICE_ID"
-          echo "Triggering deploy..."
+          echo "✅ Found service ID: $SERVICE_ID"
 
           curl -sf -X POST "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{"clearCache": "do_not_clear"}'
 
-          echo "Deploy triggered cho ${{ matrix.service }}"
+          echo "🚀 Deploy triggered cho ${{ matrix.service }}"
 
-      - name: Build Report
+      - name: Build Summary
         if: always()
         run: |
-          STATUS="${{ job.status }}"
-          ICON="✅"
-          if [ "$STATUS" != "success" ]; then ICON="❌"; fi
-
-          IMAGE="ghcr.io/nhactaohocbai/luyen-thi-lai-xe-${{ matrix.service }}:latest"
-          docker pull "$IMAGE" 2>/dev/null || true
-          SIZE=$(docker image inspect "$IMAGE" --format='{{.Size}}' 2>/dev/null | \
-            awk '{printf "%.1f MB", $1/1024/1024}' || echo "N/A")
-
-          echo "## $ICON Build Report: ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
           echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Service | \`${{ matrix.service }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Status | $STATUS |" >> $GITHUB_STEP_SUMMARY
-          echo "| Image size | $SIZE |" >> $GITHUB_STEP_SUMMARY
-          echo "| SHA tag | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Registry | \`ghcr.io\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`ghcr.io/nhactaohocbai/luyen-thi-lai-xe-${{ matrix.service }}:latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
