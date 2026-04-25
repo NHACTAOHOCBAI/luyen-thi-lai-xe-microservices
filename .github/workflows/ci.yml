@@ -38,7 +38,7 @@ jobs:
         run: npx @biomejs/biome format --write .
 
       - name: TypeScript Typecheck
-        run: npx turbo run typecheck
+        run: npx turbo run check-types
 
       - name: Unit & E2E Tests
         run: npx turbo run test
