@@ -92,21 +92,22 @@ jobs:
 
           for SERVICE in $(echo $ALL_SERVICES | jq -rc '.[]'); do
             CHANGED_MATCH=$(echo $CHANGED | jq -rc --arg s "$SERVICE" 'map(select(. == $s)) | length')
+            
             if [ "$CHANGED_MATCH" -gt "0" ]; then
-              echo "$SERVICE: changes detected -> build"
+              echo "$SERVICE: files changed -> build"
               SERVICES=$(echo $SERVICES | jq -rc --arg s "$SERVICE" '. + [$s]')
               continue
             fi
 
-            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              "https://ghcr.io/v2/nhactaohocbai/luyen-thi-lai-xe-$SERVICE/manifests/latest")
+            if [[ "${{ github.event_name }}" == "push" ]]; then
+              HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                "https://ghcr.io/v2/${{ github.repository_owner }}/luyen-thi-lai-xe-$SERVICE/manifests/latest")
 
-            if [ "$HTTP_STATUS" != "200" ]; then
-              echo "$SERVICE: image does not exist (HTTP $HTTP_STATUS) -> build"
-              SERVICES=$(echo $SERVICES | jq -rc --arg s "$SERVICE" '. + [$s]')
-            else
-              echo "$SERVICE: no changes + image exists -> skip"
+              if [ "$HTTP_STATUS" != "200" ]; then
+                echo "$SERVICE: image missing on GHCR -> build"
+                SERVICES=$(echo $SERVICES | jq -rc --arg s "$SERVICE" '. + [$s]')
+              fi
             fi
           done
 
