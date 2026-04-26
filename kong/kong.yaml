@@ -143,12 +143,11 @@ services:
       - name: basic-auth
         config:
           hide_credentials: true
-        plugins:
-          - name: jwt
-            config:
-              key_claim_name: iss
-              claims_to_verify:
-                - exp
+      - name: jwt
+        config:
+          key_claim_name: iss
+          claims_to_verify:
+            - exp
 
 consumers:
   - username: mobile-client
