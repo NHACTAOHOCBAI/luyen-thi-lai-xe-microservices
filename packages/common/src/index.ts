@@ -1,4 +1,4 @@
-export * from './http-api';
+export * from "./http-api";
 
 /**
  * @repo/common - Shared utilities, services, and configuration

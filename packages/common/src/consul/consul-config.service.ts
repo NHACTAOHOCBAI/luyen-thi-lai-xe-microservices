@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import axios, { AxiosInstance } from 'axios';
+import { Injectable, Logger } from "@nestjs/common";
+import axios, { AxiosInstance } from "axios";
 
 /**
  * Consul Configuration Service
@@ -12,7 +12,9 @@ export class ConsulConfigService {
   private readonly consulUrl: string;
   private configCache: Map<string, string> = new Map();
 
-  constructor(consulUrl: string = process.env.CONSUL_URL || 'http://localhost:8500') {
+  constructor(
+    consulUrl: string = process.env.CONSUL_URL || "http://localhost:8500",
+  ) {
     this.consulUrl = consulUrl;
     this.consulClient = axios.create({
       baseURL: this.consulUrl,
@@ -29,10 +31,10 @@ export class ConsulConfigService {
    */
   async isHealthy(): Promise<boolean> {
     try {
-      const response = await this.consulClient.get('/v1/status/leader');
+      const response = await this.consulClient.get("/v1/status/leader");
       return response.status === 200;
     } catch {
-      this.logger.warn('Consul health check failed');
+      this.logger.warn("Consul health check failed");
       return false;
     }
   }
@@ -55,7 +57,7 @@ export class ConsulConfigService {
 
       const kvData = response.data[0];
       const value = decodeBase64
-        ? Buffer.from(kvData.Value, 'base64').toString('utf-8')
+        ? Buffer.from(kvData.Value, "base64").toString("utf-8")
         : kvData.Value;
 
       this.configCache.set(key, value);
@@ -64,7 +66,10 @@ export class ConsulConfigService {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         return null;
       }
-      this.logger.error(`Failed to get key ${key} from Consul:`, this.toMessage(error));
+      this.logger.error(
+        `Failed to get key ${key} from Consul:`,
+        this.toMessage(error),
+      );
       throw error;
     }
   }
@@ -83,7 +88,7 @@ export class ConsulConfigService {
       const configMap: Record<string, string> = {};
       response.data.forEach((kvData: any) => {
         const key = kvData.Key;
-        const value = Buffer.from(kvData.Value, 'base64').toString('utf-8');
+        const value = Buffer.from(kvData.Value, "base64").toString("utf-8");
         configMap[key] = value;
       });
 
@@ -92,7 +97,10 @@ export class ConsulConfigService {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         return {};
       }
-      this.logger.error(`Failed to get prefix ${prefix} from Consul:`, this.toMessage(error));
+      this.logger.error(
+        `Failed to get prefix ${prefix} from Consul:`,
+        this.toMessage(error),
+      );
       throw error;
     }
   }
@@ -110,7 +118,10 @@ export class ConsulConfigService {
       }
       return false;
     } catch (error) {
-      this.logger.error(`Failed to set key ${key} in Consul:`, this.toMessage(error));
+      this.logger.error(
+        `Failed to set key ${key} in Consul:`,
+        this.toMessage(error),
+      );
       throw error;
     }
   }
@@ -127,7 +138,10 @@ export class ConsulConfigService {
       }
       return false;
     } catch (error) {
-      this.logger.error(`Failed to delete key ${key} from Consul:`, this.toMessage(error));
+      this.logger.error(
+        `Failed to delete key ${key} from Consul:`,
+        this.toMessage(error),
+      );
       throw error;
     }
   }
@@ -137,7 +151,9 @@ export class ConsulConfigService {
    */
   async listKeys(prefix: string): Promise<string[]> {
     try {
-      const response = await this.consulClient.get(`/v1/kv/${prefix}?recurse=true&keys`);
+      const response = await this.consulClient.get(
+        `/v1/kv/${prefix}?recurse=true&keys`,
+      );
       if (!response.data) {
         return [];
       }
@@ -146,7 +162,10 @@ export class ConsulConfigService {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         return [];
       }
-      this.logger.error(`Failed to list keys under ${prefix}:`, this.toMessage(error));
+      this.logger.error(
+        `Failed to list keys under ${prefix}:`,
+        this.toMessage(error),
+      );
       throw error;
     }
   }
@@ -156,7 +175,7 @@ export class ConsulConfigService {
    */
   clearCache(): void {
     this.configCache.clear();
-    this.logger.log('Consul config cache cleared');
+    this.logger.log("Consul config cache cleared");
   }
 
   async getRegisteredServices(): Promise<string[]> {

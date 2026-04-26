@@ -24,7 +24,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('port') ?? 3000;
+  const port = configService.get<number>("port") ?? 3000;
 
   await app.listen(port);
   console.log(`✓ User Service listening on port ${port}`);
