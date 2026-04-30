@@ -4,11 +4,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaService } from './prisma/prisma.service';
-import { ConsulConfigFactory } from '@repo/common';
+import { AppLoggerModule, ConsulConfigFactory } from '@repo/common';
 import Joi from 'joi';
 
 @Module({
   imports: [
+    AppLoggerModule,
     ConfigModule.forRoot({
       load: [
         ConsulConfigFactory.create(

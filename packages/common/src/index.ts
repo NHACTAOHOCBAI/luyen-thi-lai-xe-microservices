@@ -7,3 +7,7 @@ export * from './http-api';
 
 // ============== CONSUL CONFIGURATION ==============
 export { ConsulConfigService, ConsulConfigFactory } from './consul';
+
+// ============== LOGGER ==========================
+export * from './logger/logger.module';
+export { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
