@@ -86,7 +86,7 @@ export class ConsulConfigService {
       }
 
       const configMap: Record<string, string> = {};
-      response.data.forEach((kvData: any) => {
+      response.data.forEach((kvData: { Key: string; Value: string }) => {
         const key = kvData.Key;
         const value = Buffer.from(kvData.Value, "base64").toString("utf-8");
         configMap[key] = value;
