@@ -31,7 +31,7 @@ export function setupMicroserviceSwagger(
   }
 
   const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get("/docs-json", (req, res) => {
+  httpAdapter.get("/docs-json", (_req, res) => {
     res.json(document);
   });
 }
