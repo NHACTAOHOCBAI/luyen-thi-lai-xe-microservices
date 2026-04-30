@@ -42,7 +42,9 @@ async function bootstrap() {
       .map((entry) => {
         const [name, svcPort = '3000'] = entry.split(':');
         return {
-          name: name.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          name: name
+            .replace(/-/g, ' ')
+            .replace(/\b\w/g, (c) => c.toUpperCase()),
           url: `http://localhost:${svcPort}/docs-json`,
         };
       });
@@ -85,7 +87,9 @@ async function bootstrap() {
   if (swaggerUrls.length === 0) {
     console.warn('⚠ No services are currently running.');
   } else {
-    console.log(`✓ Active services: ${swaggerUrls.map((u) => u.name).join(', ')}`);
+    console.log(
+      `✓ Active services: ${swaggerUrls.map((u) => u.name).join(', ')}`,
+    );
   }
 
   const swaggerOptions = {

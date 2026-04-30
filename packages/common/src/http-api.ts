@@ -44,20 +44,17 @@ export function mapStatusToErrorCode(status: number): ApiErrorCode {
 }
 
 @Injectable()
-export class ApiResponseInterceptor<T>
-  implements
-    NestInterceptor<
-      T,
-      {
-        success: boolean;
-        code: string;
-        message: string;
-        timestamp: string;
-        path: string;
-        data: T;
-      }
-    >
-{
+export class ApiResponseInterceptor<T> implements NestInterceptor<
+  T,
+  {
+    success: boolean;
+    code: string;
+    message: string;
+    timestamp: string;
+    path: string;
+    data: T;
+  }
+> {
   intercept(
     context: ExecutionContext,
     next: CallHandler<T>,
