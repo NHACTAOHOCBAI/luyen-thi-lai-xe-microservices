@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Post } from "@nestjs/common";
-import { AppService, LoginRequest } from "./app.service";
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { AppService, LoginRequest } from './app.service';
 
 @Controller()
 export class AppController {
@@ -10,17 +10,17 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Get("health")
+  @Get('health')
   async health() {
     return this.appService.healthCheck();
   }
 
-  @Post("login")
+  @Post('login')
   async login(@Body() body: LoginRequest) {
     return this.appService.login(body);
   }
 
-  @Post("test-rabbitMQ")
+  @Post('test-rabbitMQ')
   async createUser(@Body() body: { email: string; name: string }) {
     const result = await this.appService.createUser(body);
     return result;
