@@ -11,3 +11,6 @@ export { ConsulConfigService, ConsulConfigFactory } from './consul';
 // ============== LOGGER ==========================
 export * from './logger/logger.module';
 export { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+
+// ============== SWAGGER =========================
+export * from './config/swagger.setup';

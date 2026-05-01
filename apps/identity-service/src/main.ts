@@ -3,7 +3,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { ApiExceptionFilter, ApiResponseInterceptor, WINSTON_MODULE_NEST_PROVIDER } from '@repo/common';
+import {
+  ApiExceptionFilter,
+  ApiResponseInterceptor,
+  setupMicroserviceSwagger,
+  WINSTON_MODULE_NEST_PROVIDER,
+} from '@repo/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
