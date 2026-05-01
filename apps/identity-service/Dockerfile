@@ -9,6 +9,8 @@ RUN turbo prune identity-service --docker
 
 # Giai đoạn 2: Install
 FROM node:20-alpine AS installer
+# Thêm libc6-compat và openssl cho Prisma
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/package-lock.json ./
@@ -17,6 +19,8 @@ RUN --mount=type=cache,id=npm,target=/root/.npm,sharing=locked \
 
 # Giai đoạn 3: Build
 FROM node:20-alpine AS builder
+# Thêm libc6-compat và openssl cho Prisma
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 COPY --from=installer /app/node_modules ./node_modules
 COPY --from=pruner /app/out/full/ .
@@ -25,6 +29,8 @@ RUN npx turbo build --filter=identity-service
 
 # Giai đoạn 4: Runner
 FROM node:20-alpine AS runner
+# Thêm libc6-compat và openssl cho Prisma runtime
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 COPY --from=builder --chown=node:node /app/apps/identity-service/dist ./apps/identity-service/dist
 COPY --from=builder --chown=node:node /app/apps/identity-service/package.json ./apps/identity-service/
@@ -32,5 +38,6 @@ COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=node:node /app/packages/common/dist ./packages/common/dist
 COPY --from=builder --chown=node:node /app/packages/common/package.json ./packages/common/package.json
+
 USER node
 CMD ["node", "apps/identity-service/dist/main.js"]

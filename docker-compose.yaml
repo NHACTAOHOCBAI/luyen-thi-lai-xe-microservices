@@ -159,6 +159,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://user:password@db-identity:5432/identity_db
       - CONSUL_URL=http://consul:8500
+      - LOGSTASH_HOST=logstash
     depends_on:
       db-identity:
         condition: service_healthy
@@ -261,6 +262,38 @@ services:
       - "8000:8000" # Cổng gọi API chính
       - "8001:8001" # Cổng Admin API để kiểm tra cấu hình
 
+  # ========================================================
+  # 5. OBSERVABILITY (ELK Stack)
+  # ========================================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.3
+    volumes:
+      - ./docker/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    ports:
+      - "5044:5044" # Cổng TCP nhận log
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.3
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
 volumes:
   db_identity_data:
   db_user_data:
@@ -271,3 +304,4 @@ volumes:
   db_analytics_data:
   db_simulation_data:
   consul_data:
+  elasticsearch_data:

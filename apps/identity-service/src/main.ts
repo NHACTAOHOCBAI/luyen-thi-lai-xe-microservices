@@ -7,11 +7,14 @@ import {
   ApiExceptionFilter,
   ApiResponseInterceptor,
   setupMicroserviceSwagger,
-} from "@repo/common";
-import { AppModule } from "./app.module";
+  WINSTON_MODULE_NEST_PROVIDER,
+} from '@repo/common';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   app.useGlobalInterceptors(new ApiResponseInterceptor());
   app.useGlobalFilters(new ApiExceptionFilter());

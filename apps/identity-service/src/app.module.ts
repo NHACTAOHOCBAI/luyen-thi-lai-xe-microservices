@@ -1,14 +1,15 @@
-import { Module } from "@nestjs/common";
-import { ConfigModule, ConfigService } from "@nestjs/config";
-import { AppController } from "./app.controller";
-import { AppService } from "./app.service";
-import { ClientsModule, Transport } from "@nestjs/microservices";
-import { PrismaService } from "./prisma/prisma.service";
-import { ConsulConfigFactory } from "@repo/common";
-import Joi from "joi";
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { PrismaService } from './prisma/prisma.service';
+import { AppLoggerModule, ConsulConfigFactory } from '@repo/common';
+import Joi from 'joi';
 
 @Module({
   imports: [
+    AppLoggerModule,
     ConfigModule.forRoot({
       load: [
         ConsulConfigFactory.create(
@@ -51,7 +52,7 @@ import Joi from "joi";
           options: {
             urls: [
               configService.get<string>("rabbitmq.url") ??
-                "amqp://localhost:5672",
+              "amqp://localhost:5672",
             ],
             queue: "notification_queue",
           },
@@ -62,4 +63,4 @@ import Joi from "joi";
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })
-export class AppModule {}
+export class AppModule { }
