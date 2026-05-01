@@ -16,6 +16,11 @@ services:
       - "5432:5432"
     volumes:
       - db_identity_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d identity_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Database cho User Service (Quản lý profile, thông tin người dùng)
   db-user:
@@ -156,8 +161,10 @@ services:
       - CONSUL_URL=http://consul:8500
       - LOGSTASH_HOST=logstash
     depends_on:
-      - db-identity
-      - consul
+      db-identity:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
 
   user-service:
     build:

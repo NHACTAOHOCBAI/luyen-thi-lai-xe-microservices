@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { NestFactory } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
+import { NestFactory } from "@nestjs/core";
+import { ConfigService } from "@nestjs/config";
 import {
   ApiExceptionFilter,
   ApiResponseInterceptor,
@@ -21,9 +21,9 @@ async function bootstrap() {
 
   // Cấu hình Swagger
   setupMicroserviceSwagger(app, {
-    title: 'Identity Service API',
+    title: "Identity Service API",
     description:
-      'Quản lý xác thực và phân quyền người dùng trong hệ thống luyện thi lái xe',
+      "Quản lý xác thực và phân quyền người dùng trong hệ thống luyện thi lái xe",
   });
 
   const configService = app.get(ConfigService);
