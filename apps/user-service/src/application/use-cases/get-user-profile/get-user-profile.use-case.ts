@@ -6,10 +6,9 @@ import { GetUserProfileQuery } from './get-user-profile.query';
 import { GetUserProfileResult } from './get-user-profile.result';
 
 @Injectable()
-export class GetUserProfileUseCase implements IUseCase<
-  GetUserProfileQuery,
-  GetUserProfileResult
-> {
+export class GetUserProfileUseCase
+  implements IUseCase<GetUserProfileQuery, GetUserProfileResult>
+{
   constructor(private readonly userProfileRepository: UserProfileRepository) {}
 
   async execute(query: GetUserProfileQuery): Promise<GetUserProfileResult> {

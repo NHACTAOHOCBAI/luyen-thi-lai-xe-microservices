@@ -4,10 +4,9 @@ import { UserProfileRepository } from '../../../domain/repositories/user-profile
 import { SyncUserRoleCommand } from './sync-user-role.command';
 
 @Injectable()
-export class SyncUserRoleUseCase implements IUseCase<
-  SyncUserRoleCommand,
-  void
-> {
+export class SyncUserRoleUseCase
+  implements IUseCase<SyncUserRoleCommand, void>
+{
   private readonly logger = new Logger(SyncUserRoleUseCase.name);
 
   constructor(private readonly userProfileRepository: UserProfileRepository) {}

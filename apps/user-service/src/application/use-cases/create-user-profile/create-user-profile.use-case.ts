@@ -16,10 +16,9 @@ export class CreateUserProfileResult {
 }
 
 @Injectable()
-export class CreateUserProfileUseCase implements IUseCase<
-  CreateUserProfileCommand,
-  CreateUserProfileResult
-> {
+export class CreateUserProfileUseCase
+  implements IUseCase<CreateUserProfileCommand, CreateUserProfileResult>
+{
   constructor(private readonly userProfileRepository: UserProfileRepository) {}
 
   async execute(

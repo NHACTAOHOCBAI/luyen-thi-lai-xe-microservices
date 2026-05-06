@@ -14,10 +14,9 @@ export class ListUsersResult {
 }
 
 @Injectable()
-export class ListUsersUseCase implements IUseCase<
-  ListUsersQuery,
-  ListUsersResult
-> {
+export class ListUsersUseCase
+  implements IUseCase<ListUsersQuery, ListUsersResult>
+{
   constructor(private readonly userProfileRepository: UserProfileRepository) {}
 
   async execute(query: ListUsersQuery): Promise<ListUsersResult> {
