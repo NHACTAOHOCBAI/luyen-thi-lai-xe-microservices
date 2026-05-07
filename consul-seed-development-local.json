@@ -13,7 +13,11 @@
       "rabbitmq.url": "amqp://localhost:5672",
       "rabbitmq.username": "guest",
       "rabbitmq.password": "guest",
-      "rabbitmq.vhost": "/"
+      "rabbitmq.vhost": "/",
+      "keycloak.baseUrl": "http://localhost:8080",
+      "keycloak.realm": "dev-realm",
+      "keycloak.mobileClientId": "mobile-client",
+      "keycloak.webClientId": "web-client"
     },
     "user-service": {
       "port": "3002",
