@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -10,6 +7,7 @@ import {
   WINSTON_MODULE_NEST_PROVIDER,
 } from '@repo/common';
 import { AppModule } from './app.module';
+import { DomainExceptionFilter } from './infrastructure/filters/domain-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,7 +15,7 @@ async function bootstrap() {
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   app.useGlobalInterceptors(new ApiResponseInterceptor());
-  app.useGlobalFilters(new ApiExceptionFilter());
+  app.useGlobalFilters(new DomainExceptionFilter(), new ApiExceptionFilter());
 
   // Cấu hình Swagger
   setupMicroserviceSwagger(app, {
