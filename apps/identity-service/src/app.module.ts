@@ -1,26 +1,23 @@
 import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaService } from './prisma/prisma.service';
 import { AppLoggerModule, ConsulConfigFactory } from '@repo/common';
-import { AuthController } from './presentation/http/auth.controller';
-import { LoginUseCase } from './application/use-cases/login/login.use-case';
-import { EventPublisher } from './application/ports/event-publisher.port';
-import { IdentityUserRepository } from './domain/repositories/identity-user.repository';
-import { DomainExceptionFilter } from './infrastructure/filters/domain-exception.filter';
-import { KeycloakService } from './infrastructure/keycloak/keycloak.service';
+import Joi from 'joi';
 import {
-  RABBITMQ_CLIENT,
-  RabbitMqEventPublisher,
-} from './infrastructure/messaging/rabbitmq-event-publisher.service';
-import { PrismaIdentityUserRepository } from './infrastructure/persistence/prisma/prisma-identity-user.repository';
-
+  KeycloakConnectModule,
+  RoleGuard,
+  AuthGuard,
+} from 'nest-keycloak-connect';
+import { APP_GUARD } from '@nestjs/core';
+import { KeycloakConfigService } from './keycloak-config.service';
 @Module({
   imports: [
     AppLoggerModule,
+    HttpModule,
     ConfigModule.forRoot({
       load: [
         ConsulConfigFactory.create(
@@ -48,13 +45,11 @@ import { PrismaIdentityUserRepository } from './infrastructure/persistence/prism
               heartbeat: Joi.number().default(60),
             }).optional(),
             keycloak: Joi.object({
-              baseUrl: Joi.string().uri().default('http://localhost:8080'),
-              realm: Joi.string().default('dev-realm'),
-              mobileClientId: Joi.string().default('mobile-client'),
-              webClientId: Joi.string().default('web-client'),
-              mobileClientSecret: Joi.string().optional(),
-              webClientSecret: Joi.string().optional(),
-            }).optional(),
+              authServerUrl: Joi.string().uri().required(),
+              realm: Joi.string().required(),
+              clientId: Joi.string().required(),
+              clientSecret: Joi.string().required(),
+            }).required(),
           }).unknown(true),
           'identity-service',
         ),
@@ -63,7 +58,7 @@ import { PrismaIdentityUserRepository } from './infrastructure/persistence/prism
     }),
     ClientsModule.registerAsync([
       {
-        name: RABBITMQ_CLIENT,
+        name: 'NOTI_SERVICE',
         imports: [ConfigModule],
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => ({
@@ -73,22 +68,24 @@ import { PrismaIdentityUserRepository } from './infrastructure/persistence/prism
               configService.get<string>('rabbitmq.url') ??
                 'amqp://localhost:5672',
             ],
-            queue: 'identity_service_publish',
-            queueOptions: { durable: true },
+            queue: 'notification_queue',
           },
         }),
       },
     ]),
+    KeycloakConnectModule.registerAsync({
+      imports: [ConfigModule],
+      useClass: KeycloakConfigService,
+    }),
   ],
-  controllers: [AppController, AuthController],
+  controllers: [AppController],
   providers: [
     AppService,
     PrismaService,
-    DomainExceptionFilter,
-    KeycloakService,
-    LoginUseCase,
-    { provide: IdentityUserRepository, useClass: PrismaIdentityUserRepository },
-    { provide: EventPublisher, useClass: RabbitMqEventPublisher },
+    // Guard kiểm tra xem có Token hợp lệ không
+    { provide: APP_GUARD, useClass: AuthGuard },
+    // Guard kiểm tra Role của User
+    { provide: APP_GUARD, useClass: RoleGuard },
   ],
 })
 export class AppModule {}
