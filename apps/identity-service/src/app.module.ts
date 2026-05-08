@@ -13,6 +13,7 @@ import {
   AuthGuard,
 } from 'nest-keycloak-connect';
 import { APP_GUARD } from '@nestjs/core';
+import { KeycloakConfigService } from './keycloak-config.service';
 @Module({
   imports: [
     AppLoggerModule,
@@ -43,6 +44,12 @@ import { APP_GUARD } from '@nestjs/core';
               connectionTimeout: Joi.number().default(10000),
               heartbeat: Joi.number().default(60),
             }).optional(),
+            keycloak: Joi.object({
+              authServerUrl: Joi.string().uri().required(),
+              realm: Joi.string().required(),
+              clientId: Joi.string().required(),
+              clientSecret: Joi.string().required(),
+            }).required(),
           }).unknown(true),
           'identity-service',
         ),
@@ -66,11 +73,9 @@ import { APP_GUARD } from '@nestjs/core';
         }),
       },
     ]),
-    KeycloakConnectModule.register({
-      authServerUrl: 'http://keycloak:8080', // URL nội bộ trong docker
-      realm: 'luyen-thi-lai-xe-realm',
-      clientId: 'nestjs-backend',
-      secret: 'FkUamLTRQOOAcRyLN4qaiPceoM5g8dwJ', // Lấy trong tab Credentials của client
+    KeycloakConnectModule.registerAsync({
+      imports: [ConfigModule],
+      useClass: KeycloakConfigService,
     }),
   ],
   controllers: [AppController],
