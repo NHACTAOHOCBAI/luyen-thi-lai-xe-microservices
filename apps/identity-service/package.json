@@ -22,10 +22,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:generate": "prisma generate --schema ./prisma/schema.prisma",
-    "db:migrate": "prisma migrate dev --schema ./prisma/schema.prisma",
-    "db:deploy": "prisma migrate deploy --schema ./prisma/schema.prisma",
-    "db:seed": "ts-node --project tsconfig.json prisma/seed.ts",
-    "db:studio": "prisma studio --schema ./prisma/schema.prisma"
+    "db:migrate": "tsx ../../scripts/with-consul-env.ts identity-service -- prisma migrate dev --schema ./prisma/schema.prisma",
+    "db:deploy": "tsx ../../scripts/with-consul-env.ts identity-service -- prisma migrate deploy --schema ./prisma/schema.prisma",
+    "db:studio": "tsx ../../scripts/with-consul-env.ts identity-service -- prisma studio --schema ./prisma/schema.prisma",
+    "db:seed": "tsx ../../scripts/with-consul-env.ts identity-service -- ts-node --project tsconfig.json prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

@@ -9,11 +9,14 @@ import { AppLoggerModule, ConsulConfigFactory } from '@repo/common';
 import Joi from 'joi';
 import {
   KeycloakConnectModule,
+  KeycloakConnectOptions,
+  PolicyEnforcementMode,
   RoleGuard,
   AuthGuard,
+  TokenValidation,
 } from 'nest-keycloak-connect';
 import { APP_GUARD } from '@nestjs/core';
-import { KeycloakConfigService } from './keycloak-config.service';
+
 @Module({
   imports: [
     AppLoggerModule,
@@ -59,7 +62,6 @@ import { KeycloakConfigService } from './keycloak-config.service';
     ClientsModule.registerAsync([
       {
         name: 'NOTI_SERVICE',
-        imports: [ConfigModule],
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
@@ -74,17 +76,24 @@ import { KeycloakConfigService } from './keycloak-config.service';
       },
     ]),
     KeycloakConnectModule.registerAsync({
-      imports: [ConfigModule],
-      useClass: KeycloakConfigService,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): KeycloakConnectOptions => ({
+        authServerUrl: configService.getOrThrow<string>(
+          'keycloak.authServerUrl',
+        ),
+        realm: configService.getOrThrow<string>('keycloak.realm'),
+        clientId: configService.getOrThrow<string>('keycloak.clientId'),
+        secret: configService.getOrThrow<string>('keycloak.clientSecret'),
+        policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
+        tokenValidation: TokenValidation.ONLINE,
+      }),
     }),
   ],
   controllers: [AppController],
   providers: [
     AppService,
     PrismaService,
-    // Guard kiểm tra xem có Token hợp lệ không
     { provide: APP_GUARD, useClass: AuthGuard },
-    // Guard kiểm tra Role của User
     { provide: APP_GUARD, useClass: RoleGuard },
   ],
 })

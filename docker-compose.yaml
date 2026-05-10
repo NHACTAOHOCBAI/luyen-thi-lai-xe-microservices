@@ -165,6 +165,8 @@ services:
         condition: service_healthy
       consul:
         condition: service_healthy
+      consul-init:
+        condition: service_completed_successfully
 
   user-service:
     build:
