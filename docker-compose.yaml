@@ -326,6 +326,22 @@ services:
       - "8080:8080"
     depends_on:
       - db-keycloak
+
+  # ========================================================
+  # 6. TOKEN BLACKLIST CACHE (Redis)
+  # ========================================================
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
 volumes:
   db_identity_data:
   db_user_data:
@@ -338,3 +354,4 @@ volumes:
   consul_data:
   elasticsearch_data:
   db_keycloak_data:
+  redis_data:

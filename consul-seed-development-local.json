@@ -17,7 +17,8 @@
       "rabbitmq.url": "amqp://localhost:5672",
       "rabbitmq.username": "guest",
       "rabbitmq.password": "guest",
-      "rabbitmq.vhost": "/"
+      "rabbitmq.vhost": "/",
+      "redis.url": "redis://localhost:6379"
     },
     "user-service": {
       "port": "3002",

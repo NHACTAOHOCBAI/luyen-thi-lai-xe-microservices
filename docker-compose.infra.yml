@@ -105,6 +105,19 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  # ── Token Blacklist Cache ───────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
   # ── Config Server ──────────────────────────────────────────
   consul:
     image: hashicorp/consul:1.19
@@ -193,3 +206,4 @@ volumes:
   db_simulation_data:
   consul_data:
   db_keycloak_data:
+  redis_data:

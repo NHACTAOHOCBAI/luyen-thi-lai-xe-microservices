@@ -16,6 +16,7 @@ import {
   TokenValidation,
 } from 'nest-keycloak-connect';
 import { APP_GUARD } from '@nestjs/core';
+import { TokenBlacklistService } from './infrastructure/token-blacklist/token-blacklist.service';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { APP_GUARD } from '@nestjs/core';
   providers: [
     AppService,
     PrismaService,
+    TokenBlacklistService,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RoleGuard },
   ],
