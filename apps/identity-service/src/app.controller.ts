@@ -31,7 +31,8 @@ export class AppController {
     return this.appService.login(body.username, body.password);
   }
 
-  @Post('auth/logout')
+  @Public()
+  @Post('logout')
   @ApiBody({ type: LogoutRequestDto })
   @ApiOkResponse({ type: LogoutResponseDto })
   @ApiUnauthorizedResponse({ description: 'Token missing or invalid (MSG129)' })
