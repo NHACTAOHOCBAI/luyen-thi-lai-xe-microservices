@@ -17,6 +17,7 @@ import {
 } from 'nest-keycloak-connect';
 import { APP_GUARD } from '@nestjs/core';
 import { TokenBlacklistService } from './infrastructure/token-blacklist/token-blacklist.service';
+import { TokenBlacklistGuard } from './infrastructure/guards/token-blacklist.guard';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { TokenBlacklistService } from './infrastructure/token-blacklist/token-bl
                 'development-local',
                 'staging',
                 'production',
+                'test',
               )
               .default('development'),
             port: Joi.number().default(3000),
@@ -96,6 +98,7 @@ import { TokenBlacklistService } from './infrastructure/token-blacklist/token-bl
     PrismaService,
     TokenBlacklistService,
     { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: TokenBlacklistGuard },
     { provide: APP_GUARD, useClass: RoleGuard },
   ],
 })
