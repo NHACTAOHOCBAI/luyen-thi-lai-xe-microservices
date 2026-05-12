@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run start:dev --filter=\"./apps/*\"",
+    "dev": "turbo run start:dev --filter=\"./apps/*\" --concurrency=15",
     "lint": "turbo run lint",
     "format": "biome format --write .",
     "check": "biome check --write .",

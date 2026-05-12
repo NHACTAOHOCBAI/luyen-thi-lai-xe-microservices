@@ -54,9 +54,18 @@
       "database.url": "postgresql://user:password@localhost:5439/simulation_db",
       "rabbitmq.url": "amqp://localhost:5672"
     },
+    "media-service": {
+      "port": "3010",
+      "database.url": "postgresql://user:password@localhost:5440/media_db",
+      "rabbitmq.url": "amqp://localhost:5672",
+      "storage.accountName": "mediasvdev2026",
+      "storage.accountKey": "YOUR_AZURE_STORAGE_ACCOUNT_KEY",
+      "storage.containerName": "media",
+      "storage.presignedUrlExpiry": "3600"
+    },
     "docs-service": {
       "port": "3009",
-      "swagger.services": "identity-service:3001,user-service:3002,exam-service:3003,course-service:3004,question-service:3005,notification-service:3006,analytics-service:3007,simulation-service:3008"
+      "swagger.services": "identity-service:3001,user-service:3002,exam-service:3003,course-service:3004,question-service:3005,notification-service:3006,analytics-service:3007,simulation-service:3008,media-service:3010"
     }
   }
 }

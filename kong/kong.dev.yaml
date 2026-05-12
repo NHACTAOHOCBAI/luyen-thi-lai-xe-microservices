@@ -93,6 +93,17 @@ services:
           - /simulation-service
         strip_path: true
 
+  - name: media-service
+    url: http://host.docker.internal:3010
+    routes:
+      - name: media-route
+        paths:
+          - /media
+      - name: media-swagger-route
+        paths:
+          - /media-service
+        strip_path: true
+
 plugins:
   - name: rate-limiting
     config:

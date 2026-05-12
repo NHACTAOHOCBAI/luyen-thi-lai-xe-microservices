@@ -98,6 +98,17 @@ services:
     volumes:
       - db_simulation_data:/var/lib/postgresql/data
 
+  db-media:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: media_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5440:5432"
+    volumes:
+      - db_media_data:/var/lib/postgresql/data
+
   # ── Message Broker ─────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -191,5 +202,6 @@ volumes:
   db_notification_data:
   db_analytics_data:
   db_simulation_data:
+  db_media_data:
   consul_data:
   db_keycloak_data:

@@ -106,6 +106,18 @@ services:
     volumes:
       - db_simulation_data:/var/lib/postgresql/data
 
+  # Database cho Media Service (Metadata của file lưu trên R2)
+  db-media:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: media_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5440:5432"
+    volumes:
+      - db_media_data:/var/lib/postgresql/data
+
   # ========================================================
   # 2. MESSAGE BROKER (Giao tiếp liên dịch vụ)
   # ========================================================
@@ -245,6 +257,17 @@ services:
       - db-simulation
       - consul
 
+  media-service:
+    build:
+      context: .
+      dockerfile: ./apps/media-service/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@db-media:5432/media_db
+      - CONSUL_URL=http://consul:8500
+    depends_on:
+      - db-media
+      - consul
+
   # ========================================================
   # 4. API GATEWAY (KONG)
   # ========================================================
@@ -335,6 +358,7 @@ volumes:
   db_notification_data:
   db_analytics_data:
   db_simulation_data:
+  db_media_data:
   consul_data:
   elasticsearch_data:
   db_keycloak_data:

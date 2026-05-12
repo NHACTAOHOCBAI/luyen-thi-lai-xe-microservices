@@ -98,6 +98,18 @@ services:
           - /simulation-service
         strip_path: true
 
+  # 9. Lưu trữ media và file (Cloudflare R2)
+  - name: media-service
+    url: http://media-service:3000
+    routes:
+      - name: media-route
+        paths:
+          - /media
+      - name: media-swagger-route
+        paths:
+          - /media-service
+        strip_path: true
+
   # 9. Swagger UI tập trung
   - name: docs-service
     url: http://docs-service:3000
