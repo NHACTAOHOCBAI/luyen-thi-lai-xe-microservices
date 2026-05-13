@@ -28,6 +28,8 @@ interface MediaFileDeletedPayload {
 
 @Controller()
 export class MessagingController {
+  private readonly logger = new Logger(MessagingController.name);
+
   constructor(
     private readonly createUserProfileUseCase: CreateUserProfileUseCase,
     private readonly syncUserRoleUseCase: SyncUserRoleUseCase,
