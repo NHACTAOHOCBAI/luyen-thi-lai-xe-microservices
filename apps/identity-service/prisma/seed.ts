@@ -13,6 +13,7 @@ async function main() {
       id: ADMIN_KEYCLOAK_ID,
       email: 'admin@test.com',
       name: 'Admin Test',
+      role: 'ADMIN',
     },
   });
 

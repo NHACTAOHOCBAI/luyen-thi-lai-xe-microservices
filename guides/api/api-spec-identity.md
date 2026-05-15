@@ -15,9 +15,13 @@ Qua Kong, auth business APIs dung prefix `/auth/*` cho login/logout va `/admin/*
 | `POST /login`                 | `POST /auth/login`            |
 | `POST /logout`                | `POST /auth/logout`           |
 | `POST /auth/refresh`          | `POST /auth/auth/refresh`     |
+| `GET /admin/users`            | `GET /admin/users`            |
+| `GET /admin/users/:id`        | `GET /admin/users/:id`        |
 | `POST /admin/users`           | `POST /admin/users`           |
+| `PATCH /admin/users/:id`      | `PATCH /admin/users/:id`      |
 | `PATCH /admin/users/:id/role` | `PATCH /admin/users/:id/role` |
 | `PATCH /admin/users/:id/lock` | `PATCH /admin/users/:id/lock` |
+| `DELETE /admin/users/:id`     | `DELETE /admin/users/:id`     |
 
 ---
 
@@ -30,12 +34,16 @@ Identity-service tích hợp Keycloak.
 | `POST /login`                 | Public                                                      |
 | `POST /logout`                | Public, nhưng cần access token trong `Authorization` header |
 | `POST /auth/refresh`          | Public                                                      |
+| `GET /admin/users`            | `ADMIN`, `CENTER_MANAGER`                                   |
+| `GET /admin/users/:id`        | `ADMIN`, `CENTER_MANAGER`                                   |
 | `GET /public`                 | Public, endpoint demo                                       |
 | `GET /private`                | JWT hợp lệ, endpoint demo                                   |
 | `GET /admin-check`            | `ADMIN`, endpoint demo                                      |
 | `POST /admin/users`           | `ADMIN`, `CENTER_MANAGER`                                   |
+| `PATCH /admin/users/:id`      | `ADMIN`                                                     |
 | `PATCH /admin/users/:id/role` | `ADMIN`                                                     |
 | `PATCH /admin/users/:id/lock` | `ADMIN`, `CENTER_MANAGER`                                   |
+| `DELETE /admin/users/:id`     | `ADMIN`                                                     |
 
 ---
 
@@ -245,6 +253,45 @@ Tạo user trong Keycloak, assign realm role, lưu record vào `identity_users`,
 
 ---
 
+### GET `/admin/users`
+
+List identity users trong `identity_db`.
+
+**Auth:** `ADMIN`, `CENTER_MANAGER`
+
+**Query:** `page`, `size`, `role`, `isActive`, `includeDeleted`, `search`.
+
+**Response `200 OK`:** `data` gom `{ items, total, page, size }`.
+
+---
+
+### GET `/admin/users/:id`
+
+Lay chi tiet identity user.
+
+**Auth:** `ADMIN`, `CENTER_MANAGER`
+
+**Response `200 OK`:** `data` la `IdentityUserResponse`.
+
+---
+
+### PATCH `/admin/users/:id`
+
+Cap nhat identity user tren Keycloak va `identity_db`.
+
+**Auth:** `ADMIN`
+
+```json
+{
+  "email": "new-email@example.com",
+  "fullName": "New Name"
+}
+```
+
+**Event published:** `identity.user.updated`.
+
+---
+
 ### PATCH `/admin/users/:id/role`
 
 Đổi realm role của user trên Keycloak.
@@ -311,6 +358,22 @@ Khóa/mở khóa tài khoản trong Keycloak bằng cách set `enabled = !locked
 
 ---
 
+### DELETE `/admin/users/:id`
+
+Soft delete identity user: disable account tren Keycloak, set `isDeleted=true`, `isActive=false`, `deletedAt` trong `identity_db`.
+
+**Auth:** `ADMIN`
+
+```json
+{
+  "deletedById": "admin-keycloak-user-id"
+}
+```
+
+**Event published:** `identity.user.deleted`.
+
+---
+
 ## Demo Endpoints
 
 Các endpoint sau đang tồn tại trong `AuthController`, chủ yếu dùng để kiểm thử guard:
@@ -330,8 +393,10 @@ Các endpoint sau đang tồn tại trong `AuthController`, chủ yếu dùng đ
 | Event                        | Destination                         | Trigger                       |
 | ---------------------------- | ----------------------------------- | ----------------------------- |
 | `identity.user.created`      | user-service + notification-service | `POST /admin/users`           |
+| `identity.user.updated`      | user-service                        | `PATCH /admin/users/:id`      |
 | `identity.user.role-changed` | user-service                        | `PATCH /admin/users/:id/role` |
-| `identity.user.locked`       | notification-service                | `PATCH /admin/users/:id/lock` |
+| `identity.user.locked`       | user-service + notification-service | `PATCH /admin/users/:id/lock` |
+| `identity.user.deleted`      | user-service                        | `DELETE /admin/users/:id`     |
 
 #### `identity.user.created`
 
@@ -355,6 +420,17 @@ Các endpoint sau đang tồn tại trong `AuthController`, chủ yếu dùng đ
 }
 ```
 
+#### `identity.user.updated`
+
+```json
+{
+  "eventName": "identity.user.updated",
+  "userId": "keycloak-uuid",
+  "email": "new-email@example.com",
+  "fullName": "New Name"
+}
+```
+
 #### `identity.user.locked`
 
 ```json
@@ -362,6 +438,16 @@ Các endpoint sau đang tồn tại trong `AuthController`, chủ yếu dùng đ
   "eventName": "identity.user.locked",
   "userId": "keycloak-uuid",
   "locked": true
+}
+```
+
+#### `identity.user.deleted`
+
+```json
+{
+  "eventName": "identity.user.deleted",
+  "userId": "keycloak-uuid",
+  "deletedById": "admin-keycloak-user-id"
 }
 ```
 

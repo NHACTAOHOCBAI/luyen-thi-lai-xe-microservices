@@ -19,7 +19,6 @@ User-service dùng `nest-keycloak-connect`.
 
 | Endpoint                        | Auth hiện tại trong code  |
 | ------------------------------- | ------------------------- |
-| `POST /users`                   | `@Public()`               |
 | `GET /users`                    | `ADMIN`, `CENTER_MANAGER` |
 | `GET /users/me`                 | JWT hợp lệ                |
 | `GET /users/:id`                | `ADMIN`, `CENTER_MANAGER` |
@@ -29,6 +28,15 @@ User-service dùng `nest-keycloak-connect`.
 | `PATCH /users/:id/license-tier` | `ADMIN`, `CENTER_MANAGER` |
 
 Các endpoint `me` và `license-tier` lấy user hiện tại từ `@AuthenticatedUser()` (`sub` trong JWT), không đọc trực tiếp `x-user-id`.
+User profile khong con duoc tao qua HTTP `POST /users`. Profile duoc tao/cap nhat/dong bo trang thai bang RabbitMQ events tu identity-service:
+
+| Event                        | User-service behavior                              |
+| ---------------------------- | -------------------------------------------------- |
+| `identity.user.created`      | Tao `UserProfile` idempotent theo Keycloak user id |
+| `identity.user.updated`      | Dong bo `email`, `fullName`                        |
+| `identity.user.role-changed` | Dong bo role va tao/xoa `StudentDetail` neu can    |
+| `identity.user.locked`       | Set `isActive = !locked`                           |
+| `identity.user.deleted`      | Soft-deactivate profile bang `isActive = false`    |
 
 ---
 
@@ -359,6 +367,43 @@ Tạo `UserProfile`; nếu role là `STUDENT` thì tạo `StudentDetail`.
 ```
 
 Đồng bộ role cho `UserProfile`; tạo hoặc xóa `StudentDetail` tùy role mới.
+
+### `identity.user.updated`
+
+```json
+{
+  "eventName": "identity.user.updated",
+  "userId": "keycloak-uuid",
+  "email": "new-email@example.com",
+  "fullName": "New Name"
+}
+```
+
+Dong bo `email` va `fullName` cho `UserProfile`.
+
+### `identity.user.locked`
+
+```json
+{
+  "eventName": "identity.user.locked",
+  "userId": "keycloak-uuid",
+  "locked": true
+}
+```
+
+Set `isActive = !locked`.
+
+### `identity.user.deleted`
+
+```json
+{
+  "eventName": "identity.user.deleted",
+  "userId": "keycloak-uuid",
+  "deletedById": "admin-keycloak-user-id"
+}
+```
+
+Soft-deactivate profile bang `isActive = false`.
 
 ### `media.file.deleted`
 

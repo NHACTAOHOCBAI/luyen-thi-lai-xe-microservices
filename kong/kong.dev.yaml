@@ -11,6 +11,11 @@ services:
       - name: identity-route
         paths:
           - /auth
+        strip_path: true
+      - name: identity-admin-route
+        paths:
+          - /admin
+        strip_path: false
       - name: identity-swagger-route
         paths:
           - /identity-service
