@@ -195,7 +195,110 @@ curl -X POST http://localhost:3001/refresh \
 
 > Cập nhật `ACCESS_TOKEN` với token mới.
 
-### 3.4 — Logout
+### 3.4 — Forgot password
+
+Endpoint forgot-password la public. Direct local path la `POST /forgot-password`; qua Kong la `POST /auth/forgot-password`.
+
+```bash
+curl -X POST http://localhost:3001/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "student1@gm.uit.edu.vn"
+  }'
+```
+
+**Ket qua mong doi `200`:**
+
+```json
+{
+  "success": true,
+  "code": "SUCCESS",
+  "message": "OK",
+  "timestamp": "...",
+  "path": "/forgot-password",
+  "data": {
+    "success": true,
+    "message": "If this email exists, password reset instructions have been sent."
+  }
+}
+```
+
+**Kiem tra response khong leak email ton tai hay khong:**
+
+```bash
+curl -X POST http://localhost:3001/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "not-found@example.com"
+  }'
+```
+
+Van expect `200` va message generic nhu tren.
+
+**Kiem tra qua Kong:**
+
+```bash
+curl -X POST http://localhost:8000/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "student1@gm.uit.edu.vn"
+  }'
+```
+
+Sau khi goi API, mo Mailpit de xem email reset:
+
+```text
+http://localhost:8025
+```
+
+Click link trong email. Link se mo trang reset password cua Keycloak, user nhap mat khau moi tai do, sau do quay lai app/login endpoint de dang nhap bang mat khau moi.
+
+Luu y:
+
+- Local Docker dung Mailpit SMTP `mailpit:1025`.
+- Neu realm Keycloak da ton tai tu truoc, file `realm-export.json` moi se khong tu apply lai. Hay chay lai sidecar `keycloak-smtp-config` de apply SMTP config hien tai tu `.env`.
+- Neu SMTP chua cau hinh, Keycloak se tra `500 Failed to send execute actions email`.
+
+**Test gui inbox that bang SMTP provider**
+
+Khi chua co private domain, cach it ma sat nhat de test inbox that la Gmail SMTP bang App Password. Gmail SMTP phu hop dev/demo; production nen dung private domain da verify voi transactional provider.
+
+Bat 2-Step Verification tren Google account, tao App Password, roi dat SMTP provider trong root `.env`:
+
+```env
+KEYCLOAK_SMTP_HOST=smtp.gmail.com
+KEYCLOAK_SMTP_PORT=587
+KEYCLOAK_SMTP_FROM=your-gmail-address@gmail.com
+KEYCLOAK_SMTP_FROM_DISPLAY_NAME=Luyen Thi Lai Xe
+KEYCLOAK_SMTP_REPLY_TO=your-gmail-address@gmail.com
+KEYCLOAK_SMTP_REPLY_TO_DISPLAY_NAME=Luyen Thi Lai Xe
+KEYCLOAK_SMTP_AUTH=true
+KEYCLOAK_SMTP_USER=your-gmail-address@gmail.com
+KEYCLOAK_SMTP_PASSWORD=<gmail-app-password>
+KEYCLOAK_SMTP_SSL=false
+KEYCLOAK_SMTP_STARTTLS=true
+```
+
+Apply SMTP config vao Keycloak realm:
+
+```bash
+docker compose up -d --force-recreate keycloak-smtp-config
+
+# Hoac neu dang chay infra-only:
+docker compose -f docker-compose.infra.yml up -d --force-recreate keycloak-smtp-config
+```
+
+Sau do goi lai `POST /forgot-password` voi email that. Expect API van tra `200` generic, va email reset password se vao inbox that thay vi Mailpit.
+
+Neu email khong toi inbox:
+
+- Kiem tra container `keycloak-smtp-config` exited code `0`.
+- Kiem tra Keycloak logs co loi SMTP auth/TLS hay sender/domain chua verify.
+- Kiem tra Gmail App Password co dung 16 ky tu va account da bat 2-Step Verification.
+- Kiem tra provider yeu cau verify sender domain, SPF/DKIM/DMARC, hoac sandbox recipient.
+- Thu lai bang Mailpit default de tach loi forgot-password API khoi loi SMTP provider.
+
+### 3.5 — Logout
 
 Logout cần cả access token (header) và refresh token (body) để revoke toàn bộ session trên Keycloak.
 
@@ -223,7 +326,7 @@ curl -X POST http://localhost:3001/logout \
 }
 ```
 
-### 3.5 — Xác nhận access token bị blacklist
+### 3.6 — Xác nhận access token bị blacklist
 
 ```bash
 curl http://localhost:3001/private \
@@ -242,7 +345,7 @@ curl http://localhost:3001/private \
 }
 ```
 
-### 3.6 — Xác nhận refresh token bị revoke (không thể lấy token mới)
+### 3.7 — Xác nhận refresh token bị revoke (không thể lấy token mới)
 
 ```bash
 curl -X POST http://localhost:3001/refresh \
@@ -269,7 +372,7 @@ curl -X POST http://localhost:3001/refresh \
 > Cần `ACCESS_TOKEN` của tài khoản có role `ADMIN`.
 
 ```bash
-# Login lại để lấy token mới (sau khi logout ở bước 3.4)
+# Login lại để lấy token mới (sau khi logout ở bước 3.5)
 ACCESS_TOKEN=$(curl -s -X POST http://localhost:3001/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin@test.com","password":"Admin@123"}' \
@@ -279,7 +382,7 @@ ACCESS_TOKEN=$(curl -s -X POST http://localhost:3001/login \
 ### 4.1 — Tạo user mới (STUDENT)
 
 ```bash
-curl -X POST http://localhost:3001/admin/users \
+curl -X POST http://localhost:3001/admin/identity-users \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -298,7 +401,7 @@ curl -X POST http://localhost:3001/admin/users \
   "code": "SUCCESS",
   "message": "Created",
   "timestamp": "...",
-  "path": "/admin/users",
+  "path": "/admin/identity-users",
   "data": {
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "email": "student1@gm.uit.edu.vn",
@@ -317,7 +420,7 @@ USER_ID="f47ac10b-58cc-4372-a567-0e02b2c3d479"
 ### 4.2 — Tạo user trùng email (kiểm tra conflict)
 
 ```bash
-curl -X POST http://localhost:3001/admin/users \
+curl -X POST http://localhost:3001/admin/identity-users \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -336,14 +439,14 @@ curl -X POST http://localhost:3001/admin/users \
   "code": "VALIDATION_ERROR",
   "message": "User with this email already exists in Keycloak",
   "timestamp": "...",
-  "path": "/admin/users"
+  "path": "/admin/identity-users"
 }
 ```
 
 ### 4.3 — Đổi role
 
 ```bash
-curl -X PATCH "http://localhost:3001/admin/users/$USER_ID/role" \
+curl -X PATCH "http://localhost:3001/admin/identity-users/$USER_ID/role" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"role": "INSTRUCTOR"}'
@@ -357,7 +460,7 @@ curl -X PATCH "http://localhost:3001/admin/users/$USER_ID/role" \
   "code": "SUCCESS",
   "message": "OK",
   "timestamp": "...",
-  "path": "/admin/users/.../role",
+  "path": "/admin/identity-users/.../role",
   "data": { "userId": "...", "role": "INSTRUCTOR" }
 }
 ```
@@ -365,7 +468,7 @@ curl -X PATCH "http://localhost:3001/admin/users/$USER_ID/role" \
 ### 4.4 — Khoá tài khoản
 
 ```bash
-curl -X PATCH "http://localhost:3001/admin/users/$USER_ID/lock" \
+curl -X PATCH "http://localhost:3001/admin/identity-users/$USER_ID/lock" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"locked": true}'
@@ -379,7 +482,7 @@ curl -X PATCH "http://localhost:3001/admin/users/$USER_ID/lock" \
   "code": "SUCCESS",
   "message": "OK",
   "timestamp": "...",
-  "path": "/admin/users/.../lock",
+  "path": "/admin/identity-users/.../lock",
   "data": { "userId": "...", "locked": true }
 }
 ```
@@ -398,7 +501,7 @@ curl -X POST http://localhost:3001/login \
 ### 4.6 — Mở khoá tài khoản
 
 ```bash
-curl -X PATCH "http://localhost:3001/admin/users/$USER_ID/lock" \
+curl -X PATCH "http://localhost:3001/admin/identity-users/$USER_ID/lock" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"locked": false}'
@@ -412,7 +515,7 @@ curl -X PATCH "http://localhost:3001/admin/users/$USER_ID/lock" \
   "code": "SUCCESS",
   "message": "OK",
   "timestamp": "...",
-  "path": "/admin/users/.../lock",
+  "path": "/admin/identity-users/.../lock",
   "data": { "userId": "...", "locked": false }
 }
 ```
@@ -420,7 +523,7 @@ curl -X PATCH "http://localhost:3001/admin/users/$USER_ID/lock" \
 ### 4.7 — List users
 
 ```bash
-curl "http://localhost:3001/admin/users" \
+curl "http://localhost:3001/admin/identity-users" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -444,7 +547,7 @@ Thử filter: `?role=STUDENT`, `?isActive=true`, `?search=student1`, `?includeDe
 ### 4.8 — Get user by ID
 
 ```bash
-curl "http://localhost:3001/admin/users/$USER_ID" \
+curl "http://localhost:3001/admin/identity-users/$USER_ID" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -453,7 +556,7 @@ curl "http://localhost:3001/admin/users/$USER_ID" \
 ### 4.9 — Cập nhật user (email + fullName)
 
 ```bash
-curl -X PATCH "http://localhost:3001/admin/users/$USER_ID" \
+curl -X PATCH "http://localhost:3001/admin/identity-users/$USER_ID" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"email": "student1-updated@gm.uit.edu.vn", "fullName": "Nguyễn Văn A (updated)"}'
@@ -466,7 +569,7 @@ curl -X PATCH "http://localhost:3001/admin/users/$USER_ID" \
 ### 4.10 — Soft delete user
 
 ```bash
-curl -X DELETE "http://localhost:3001/admin/users/$USER_ID" \
+curl -X DELETE "http://localhost:3001/admin/identity-users/$USER_ID" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"deletedById": "<admin_keycloak_id>"}'
@@ -485,7 +588,7 @@ STUDENT_TOKEN=$(curl -s -X POST http://localhost:3001/login \
   -d '{"username":"student1@gm.uit.edu.vn","password":"<new_password>"}' \
   | jq -r '.data.accessToken')
 
-curl -X POST http://localhost:3001/admin/users \
+curl -X POST http://localhost:3001/admin/identity-users \
   -H "Authorization: Bearer $STUDENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"email":"x@test.com","fullName":"X","role":"STUDENT","temporaryPassword":"Pass@123"}'

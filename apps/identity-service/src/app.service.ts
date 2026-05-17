@@ -14,6 +14,8 @@ import { lastValueFrom } from 'rxjs';
 import { LoginResponseDto } from './presentation/dtos/login.response.dto';
 import { LogoutResponseDto } from './presentation/dtos/logout.response.dto';
 import { TokenBlacklistService } from './infrastructure/token-blacklist/token-blacklist.service';
+import { KeycloakAdminService } from './infrastructure/keycloak-admin/keycloak-admin.service';
+import { ForgotPasswordResponseDto } from './presentation/dtos/forgot-password.response.dto';
 
 @Injectable()
 export class AppService {
@@ -23,6 +25,7 @@ export class AppService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly tokenBlacklistService: TokenBlacklistService,
+    private readonly keycloakAdminService: KeycloakAdminService,
   ) {}
 
   async login(username: string, password: string): Promise<LoginResponseDto> {
@@ -91,21 +94,21 @@ export class AppService {
   ): Promise<LogoutResponseDto> {
     if (!accessToken) {
       throw new UnauthorizedException(
-        'Authentication token is missing or invalid. (MSG129)',
+        'Token xác thực bị thiếu hoặc không hợp lệ. (MSG129)',
       );
     }
 
     const decoded = this.decodeToken(accessToken);
     if (!decoded || typeof decoded.exp !== 'number') {
       throw new UnauthorizedException(
-        'Authentication token is missing or invalid. (MSG129)',
+        'Token xác thực bị thiếu hoặc không hợp lệ. (MSG129)',
       );
     }
 
     const now = Math.floor(Date.now() / 1000);
     if (decoded.exp <= now) {
       throw new UnauthorizedException(
-        'Authentication token is missing or invalid. (MSG129)',
+        'Token xác thực bị thiếu hoặc không hợp lệ. (MSG129)',
       );
     }
 
@@ -117,8 +120,8 @@ export class AppService {
 
     return {
       success: true,
-      message: 'You have been logged out successfully. (MSG130)',
-      instruction: 'Please delete your token from LocalStorage or Cookie',
+      message: 'Bạn đã đăng xuất thành công. (MSG130)',
+      instruction: 'Vui lòng xóa token khỏi LocalStorage hoặc Cookie',
     };
   }
 
@@ -188,9 +191,29 @@ export class AppService {
       };
     } catch {
       throw new UnauthorizedException(
-        'Refresh token is invalid or has expired. Please log in again',
+        'Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại',
       );
     }
+  }
+
+  async forgotPassword(email: string): Promise<ForgotPasswordResponseDto> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const genericResponse = {
+      success: true,
+      message: 'Nếu email này tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi.',
+    };
+
+    const user =
+      await this.keycloakAdminService.findUserByEmail(normalizedEmail);
+    if (!user?.id || user.enabled === false) {
+      this.logger.log(
+        `Forgot password requested for non-existing or disabled email: ${normalizedEmail}`,
+      );
+      return genericResponse;
+    }
+
+    await this.keycloakAdminService.sendPasswordResetEmail(user.id);
+    return genericResponse;
   }
 
   private decodeToken(token: string): jwt.JwtPayload | null {
