@@ -32,17 +32,6 @@ services:
     volumes:
       - db_user_data:/var/lib/postgresql/data
 
-  db-exam:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: exam_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5434:5432"
-    volumes:
-      - db_exam_data:/var/lib/postgresql/data
-
   db-course:
     image: postgres:15-alpine
     environment:
@@ -108,7 +97,6 @@ services:
       - "5440:5432"
     volumes:
       - db_media_data:/var/lib/postgresql/data
-
   # ── Message Broker ─────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -295,7 +283,6 @@ services:
 volumes:
   db_identity_data:
   db_user_data:
-  db_exam_data:
   db_course_data:
   db_question_data:
   db_notification_data:
